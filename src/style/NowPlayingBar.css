@@ -1,0 +1,437 @@
+/* NowPlayingBar.css - Spotify-inspired design */
+
+.now-playing-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 90px;
+  background: linear-gradient(90deg, #181818 0%, #282828 100%);
+  border-top: 1px solid #2a2a2a;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  z-index: 1000;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.5);
+}
+
+.now-playing-bar.minimized {
+  height: 50px;
+  padding: 0 12px;
+}
+
+/* Error Message */
+.error-message {
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #e22134;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from { top: -60px; opacity: 0; }
+  to { top: -40px; opacity: 1; }
+}
+
+/* Track Info Section */
+.track-info {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  flex: 0 1 30%;
+  gap: 12px;
+}
+
+.track-thumbnail {
+  width: 56px;
+  height: 56px;
+  border-radius: 4px;
+  object-fit: cover;
+  transition: transform 0.2s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.minimized .track-thumbnail {
+  width: 32px;
+  height: 32px;
+}
+
+.track-thumbnail:hover {
+  transform: scale(1.05);
+}
+
+.track-details {
+  min-width: 0;
+  flex: 1;
+}
+
+.track-title {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.minimized .track-title {
+  font-size: 12px;
+}
+
+.track-artist {
+  color: #b3b3b3;
+  font-size: 11px;
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.track-artist:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.like-button {
+  background: none;
+  border: none;
+  color: #b3b3b3;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.like-button:hover {
+  color: #1db954;
+  background: rgba(29, 185, 84, 0.1);
+  transform: scale(1.1);
+}
+
+/* Player Controls Section */
+.player-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  max-width: 722px;
+  gap: 8px;
+}
+
+.minimized .player-controls {
+  flex-direction: row;
+  gap: 16px;
+}
+
+.controls-main {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.controls-main button {
+  background: none;
+  border: none;
+  color: #b3b3b3;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.controls-main button:hover:not(:disabled) {
+  color: #ffffff;
+  transform: scale(1.1);
+}
+
+.controls-main button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.play-pause-button {
+  background: #ffffff !important;
+  color: #000000 !important;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.play-pause-button:hover:not(:disabled) {
+  background: #f0f0f0 !important;
+  transform: scale(1.06);
+}
+
+.play-pause-button:active {
+  transform: scale(0.96);
+}
+
+/* Time Control */
+.time-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 500px;
+}
+
+.minimized .time-control {
+  display: none;
+}
+
+.time-control span {
+  color: #b3b3b3;
+  font-size: 11px;
+  font-weight: 400;
+  min-width: 40px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Seek Slider */
+.seek-slider {
+  flex: 1;
+  height: 4px;
+  background: #4f4f4f;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.seek-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: #ffffff;
+  border-radius: 50%;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.seek-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: #ffffff;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.seek-slider:hover {
+  background: #1db954;
+}
+
+.seek-slider:hover::-webkit-slider-thumb {
+  opacity: 1;
+}
+
+.seek-slider:hover::-moz-range-thumb {
+  opacity: 1;
+}
+
+.seek-slider::-webkit-slider-track {
+  background: transparent;
+}
+
+.seek-slider::-moz-range-track {
+  background: transparent;
+  border: none;
+}
+
+/* Progress fill effect */
+.seek-slider {
+  background: linear-gradient(to right, #1db954 0%, #1db954 var(--progress, 0%), #4f4f4f var(--progress, 0%), #4f4f4f 100%);
+}
+
+/* Extras Section */
+.extras {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 0 1 30%;
+  justify-content: flex-end;
+}
+
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.volume-control button,
+.extras > button {
+  background: none;
+  border: none;
+  color: #b3b3b3;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.volume-control button:hover,
+.extras > button:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
+}
+
+/* Volume Slider (if you want to add one later) */
+.volume-slider {
+  width: 80px;
+  height: 4px;
+  background: #4f4f4f;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: #ffffff;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.volume-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: #ffffff;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .now-playing-bar {
+    padding: 0 12px;
+    height: 80px;
+  }
+  
+  .track-info {
+    flex: 1;
+  }
+  
+  .player-controls {
+    flex: 1;
+  }
+  
+  .extras {
+    flex: 0 0 auto;
+  }
+  
+  .volume-control {
+    display: none;
+  }
+  
+  .time-control span {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .now-playing-bar {
+    height: 70px;
+    padding: 0 8px;
+  }
+  
+  .track-thumbnail {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .track-title {
+    font-size: 12px;
+  }
+  
+  .track-artist {
+    font-size: 10px;
+  }
+  
+  .controls-main {
+    gap: 12px;
+  }
+  
+  .play-pause-button {
+    width: 28px !important;
+    height: 28px !important;
+  }
+  
+  .like-button {
+    display: none;
+  }
+}
+
+/* Loading Animation */
+@keyframes pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+.controls-main button:disabled {
+  animation: pulse 1.5s infinite;
+}
+
+/* Smooth transitions for all interactive elements */
+* {
+  transition: color 0.2s ease, background-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+}
+
+/* Custom scrollbar for any overflow content */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #121212;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #535353;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #727272;
+}
