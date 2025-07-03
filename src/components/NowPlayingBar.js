@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useContext, useCallback } from 'react';
 import {
   Play, Pause, SkipBack, SkipForward,
-  Volume2, VolumeX, Minimize2, Maximize2, PlusCircle
+  Volume2, VolumeX, PlusCircle,
+  Shuffle, Repeat, Repeat1
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import '../style/NowPlayingBar.css';
@@ -11,23 +12,31 @@ const NowPlayingBar = () => {
     currentTrack,
     isPlaying,
     setIsPlaying,
+    playlist,
+    shuffleMode,
+    setShuffleMode,
+    repeatMode,
+    setRepeatMode,
     playNextTrack,
     playPreviousTrack,
     togglePlayPause,
     handleTrackEnd,
+    user,
+    addSongToPlaylist,
+    palylistname,
+    setSong
   } = useContext(AuthContext);
 
   const [isMuted, setIsMuted] = useState(false);
-  const [volume, setVolume] = useState(100); // Fixed: Added setVolume
+  const [volume, setVolume] = useState(100);
   const [isLiked, setIsLiked] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(false);
   const [playerReady, setPlayerReady] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [apiLoaded, setApiLoaded] = useState(false); // Track API loading state
-
+  const [apiLoaded, setApiLoaded] = useState(false);
+  setVolume(100); 
   const playerRef = useRef(null);
   const intervalRef = useRef(null);
   const playerContainerRef = useRef(null);
@@ -65,7 +74,7 @@ const NowPlayingBar = () => {
     return () => {
       destroyPlayer();
     };
-  }, []); // Fixed: Added empty dependency array
+  }, []);
 
   // --- Player Setup and Track Changes ---
   useEffect(() => {
@@ -75,7 +84,16 @@ const NowPlayingBar = () => {
     } else if (!currentTrack) {
       destroyPlayer();
     }
-  }, [currentTrack, apiLoaded]); // Fixed: Added dependency array
+  }, [currentTrack, apiLoaded]);
+
+  // --- Progress Bar Update ---
+  useEffect(() => {
+    const seekSlider = document.querySelector('.seek-slider');
+    if (seekSlider && duration > 0) {
+      const progressPercentage = (currentTime / duration) * 100;
+      seekSlider.style.setProperty('--progress', progressPercentage);
+    }
+  }, [currentTime, duration]);
 
   const setupPlayer = useCallback((videoId) => {
     setIsLoading(true);
@@ -101,7 +119,7 @@ const NowPlayingBar = () => {
         onError: onPlayerError,
       },
     });
-  }, [isPlaying]); // Added dependency array
+  }, [isPlaying]);
 
   const destroyPlayer = useCallback(() => {
     stopTimeTracking();
@@ -116,7 +134,7 @@ const NowPlayingBar = () => {
     setPlayerReady(false);
     setCurrentTime(0);
     setDuration(0);
-  }, []); // Added dependency array
+  }, []);
 
   // --- Player Event Handlers ---
   const onPlayerReady = useCallback((event) => {
@@ -155,7 +173,7 @@ const NowPlayingBar = () => {
         setIsPlaying(false);
         stopTimeTracking();
         setCurrentTime(0);
-        handleTrackEnd?.();
+        handleLocalTrackEnd();
         break;
       case window.YT.PlayerState.BUFFERING:
         setIsLoading(true);
@@ -164,11 +182,11 @@ const NowPlayingBar = () => {
         setIsLoading(false);
         break;
     }
-  }, [setIsPlaying, handleTrackEnd]);
+  }, [setIsPlaying]);
 
   const onPlayerError = useCallback((event) => {
     console.error('YouTube Player Error:', event.data);
-    setError(`Failed to load track. Error code: ${event.data}`);
+    setError("Failed to load track");
     setIsLoading(false);
   }, []);
 
@@ -205,14 +223,38 @@ const NowPlayingBar = () => {
     };
   }, []);
 
+  // --- Local Track End Handler ---
+  const handleLocalTrackEnd = useCallback(() => {
+    if (repeatMode === 'one') {
+      // Repeat current track
+      setIsPlaying(true);
+      if (playerRef.current) {
+        playerRef.current.seekTo(0, true);
+        playerRef.current.playVideo();
+      }
+    } else {
+      // Use context's handleTrackEnd or playNextTrack
+      if (handleTrackEnd) {
+        handleTrackEnd();
+      } else {
+        playNextTrack();
+      }
+    }
+  }, [repeatMode, handleTrackEnd, playNextTrack, setIsPlaying]);
+
   // --- UI Handlers ---
   const handleSeek = useCallback((e) => {
     const newTime = parseFloat(e.target.value);
     if (playerReady && playerRef.current) {
       playerRef.current.seekTo(newTime, true);
       setCurrentTime(newTime);
+      
+      // Update progress bar immediately
+      const progressPercentage = (newTime / duration) * 100;
+      e.target.style.setProperty('--progress', progressPercentage);
     }
-  }, [playerReady]);
+  }, [playerReady, duration]);
+
 
   const toggleMute = useCallback(() => {
     setIsMuted((prev) => {
@@ -228,7 +270,37 @@ const NowPlayingBar = () => {
     });
   }, [playerReady]);
 
-  const toggleLike = useCallback(() => setIsLiked((prev) => !prev), []);
+  const toggleShuffle = useCallback(() => {
+    setShuffleMode(prev => !prev);
+  }, [setShuffleMode]);
+
+  const toggleRepeat = useCallback(() => {
+    setRepeatMode(prev => {
+      if (prev === 'off') return 'all';
+      if (prev === 'all') return 'one';
+      return 'off';
+    });
+  }, [setRepeatMode]);
+
+  const handleLike = useCallback(async () => {
+    if (!currentTrack) return;
+    
+    try {
+      // Set the current track as the song to be added
+      setSong(currentTrack);
+      
+      // Add to playlist using context function
+      await addSongToPlaylist(user, "Liked Songs", currentTrack);
+      
+      // Update UI state
+      setIsLiked(true);
+      
+      console.log('Song added to playlist successfully!');
+    } catch (error) {
+      console.error('Error adding song to playlist:', error);
+      // Optionally show error message to user
+    }
+  }, [currentTrack, user, palylistname, addSongToPlaylist, setSong]);
 
   const formatTime = useCallback((timeInSeconds) => {
     if (isNaN(timeInSeconds) || timeInSeconds < 0) return '0:00';
@@ -242,7 +314,7 @@ const NowPlayingBar = () => {
   }
 
   return (
-    <div className={`now-playing-bar ${isMinimized ? 'minimized' : ''}`}>
+    <div className={`now-playing-bar`}>
       <div ref={playerContainerRef} style={{ position: 'absolute', top: -9999, left: -9999 }}></div>
 
       {error && <div className="error-message">{error}</div>}
@@ -258,18 +330,36 @@ const NowPlayingBar = () => {
           <div className="track-title">{currentTrack.title}</div>
           <div className="track-artist">{currentTrack.artist}</div>
         </div>
-        <button onClick={toggleLike} className="like-button">
+        <button onClick={setSong(currentTrack)} className="like-button">
           <PlusCircle size={20} fill={isLiked ? 'red' : 'none'} color={isLiked ? 'red' : 'currentColor'} />
         </button>
       </div>
 
       <div className="player-controls">
         <div className="controls-main">
-          <button onClick={playPreviousTrack} disabled={isLoading}><SkipBack size={20} /></button>
+          <button 
+            onClick={toggleShuffle} 
+            className={`shuffle-button ${shuffleMode ? 'active' : ''}`}
+            disabled={isLoading}
+          >
+            <Shuffle size={16} />
+          </button>
+          <button onClick={playPreviousTrack} disabled={isLoading || playlist.length === 0}>
+            <SkipBack size={20} />
+          </button>
           <button onClick={togglePlayPause} disabled={isLoading || !playerReady} className="play-pause-button">
             {isPlaying ? <Pause size={28} /> : <Play size={28} />}
           </button>
-          <button onClick={playNextTrack} disabled={isLoading}><SkipForward size={20} /></button>
+          <button onClick={playNextTrack} disabled={isLoading || playlist.length === 0}>
+            <SkipForward size={20} />
+          </button>
+          <button 
+            onClick={toggleRepeat} 
+            className={`repeat-button ${repeatMode !== 'off' ? 'active' : ''}`}
+            disabled={isLoading}
+          >
+            {repeatMode === 'one' ? <Repeat1 size={16} /> : <Repeat size={16} />}
+          </button>
         </div>
         <div className="time-control">
           <span>{formatTime(currentTime)}</span>
@@ -292,9 +382,6 @@ const NowPlayingBar = () => {
             {isMuted || volume === 0 ? <VolumeX size={20} /> : <Volume2 size={20} />}
           </button>
         </div>
-        <button onClick={() => setIsMinimized(!isMinimized)}>
-          {isMinimized ? <Maximize2 size={20} /> : <Minimize2 size={20} />}
-        </button>
       </div>
     </div>
   );

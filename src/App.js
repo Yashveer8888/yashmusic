@@ -15,23 +15,26 @@ import PlaylistSongs from './components/PlaylistSong';
 function App() {
   return (
     <BrowserRouter>
-      <div className="flex min-h-screen">
-        <div className="flex-1 flex flex-col">
+      <div >
+        <div >
           <Routes>
             {/* <Route path="/login" element={<Login />} /> */}
             <Route path="/" element={<HomePage />} />
             <Route path="/home" element={<HomePage />} />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/library" element={<LibraryPage />} />
-            <Route path="/createplaylist" element={<CreatePlaylist />} />
-            <Route path="/profile" element={<Profile />} />
+            <Route path="/create-playlist" element={<CreatePlaylist />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/playlists" element={<ListOfPlaylist />} />
-            <Route path="/playlistsongs" element={<PlaylistSongs />} />
+            <Route path="/playlist-songs" element={<PlaylistSongs />} />
           </Routes>
-          <NowPlayingBar />
         </div>
+        <div>
+        <NowPlayingBar />
+        </div>
+        <div>
         <Sidebar />
+        </div>
       </div>
     </BrowserRouter>
   );

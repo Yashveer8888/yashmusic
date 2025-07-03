@@ -1,0 +1,423 @@
+/* Spotify-Inspired Add Playlist Styles */
+
+.add-playlist-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  color: #ffffff;
+  font-family: 'Circular Std', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Animated background overlay */
+.add-playlist-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(29, 185, 84, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(30, 215, 96, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.03) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+  animation: backgroundPulse 8s ease-in-out infinite;
+}
+
+@keyframes backgroundPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+/* Floating particles effect */
+.add-playlist-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(2px 2px at 20px 30px, rgba(255, 255, 255, 0.1), transparent),
+    radial-gradient(2px 2px at 40px 70px, rgba(29, 185, 84, 0.2), transparent),
+    radial-gradient(1px 1px at 90px 40px, rgba(255, 255, 255, 0.05), transparent),
+    radial-gradient(1px 1px at 130px 80px, rgba(30, 215, 96, 0.1), transparent);
+  background-repeat: repeat;
+  background-size: 200px 100px;
+  animation: particleFloat 20s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes particleFloat {
+  0% { transform: translateY(0px) rotate(0deg); }
+  100% { transform: translateY(-100px) rotate(360deg); }
+}
+
+/* Main content container */
+.add-playlist-container > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Title */
+.add-playlist-container h2 {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 40px;
+  background: linear-gradient(135deg, #ffffff 0%, #1db954 50%, #1ed760 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-align: center;
+  position: relative;
+  animation: titleGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes titleGlow {
+  0% { filter: drop-shadow(0 0 10px rgba(29, 185, 84, 0.3)); }
+  100% { filter: drop-shadow(0 0 20px rgba(29, 185, 84, 0.6)); }
+}
+
+.add-playlist-container h2::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, #1db954, #1ed760);
+  border-radius: 2px;
+  animation: underlineExpand 2s ease-in-out infinite alternate;
+}
+
+@keyframes underlineExpand {
+  0% { width: 60px; }
+  100% { width: 120px; }
+}
+
+/* Input field */
+.add-playlist-container input[type="text"] {
+  width: 100%;
+  max-width: 400px;
+  padding: 20px 24px;
+  font-size: 1.1rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  color: #ffffff;
+  backdrop-filter: blur(20px);
+  transition: all 0.4s ease;
+  margin-bottom: 32px;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  outline: none;
+  font-family: inherit;
+}
+
+.add-playlist-container input[type="text"]::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+  transition: all 0.3s ease;
+}
+
+.add-playlist-container input[type="text"]:focus {
+  border-color: #1db954;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    0 0 0 4px rgba(29, 185, 84, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.add-playlist-container input[type="text"]:focus::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.add-playlist-container input[type="text"]:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Create button */
+.add-playlist-container button {
+  padding: 18px 48px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #1db954 0%, #1ed760 100%);
+  border: none;
+  border-radius: 50px;
+  color: #000000;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 
+    0 8px 32px rgba(29, 185, 84, 0.3),
+    0 4px 16px rgba(0, 0, 0, 0.2);
+  font-family: inherit;
+  position: relative;
+  overflow: hidden;
+  min-width: 200px;
+  margin-bottom: 24px;
+}
+
+.add-playlist-container button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.6s ease;
+}
+
+.add-playlist-container button:hover::before {
+  left: 100%;
+}
+
+.add-playlist-container button:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 
+    0 12px 48px rgba(29, 185, 84, 0.4),
+    0 8px 24px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, #1ed760 0%, #17c653 100%);
+}
+
+.add-playlist-container button:active {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 
+    0 6px 24px rgba(29, 185, 84, 0.3),
+    0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.add-playlist-container button:focus {
+  outline: none;
+  box-shadow: 
+    0 8px 32px rgba(29, 185, 84, 0.3),
+    0 0 0 4px rgba(29, 185, 84, 0.4);
+}
+
+/* Success and Error Messages */
+.add-playlist-container p {
+  margin: 16px 0;
+  padding: 16px 24px;
+  border-radius: 12px;
+  font-weight: 500;
+  text-align: center;
+  backdrop-filter: blur(10px);
+  animation: messageSlideIn 0.5s ease-out;
+  max-width: 400px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes messageSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Success message */
+.add-playlist-container p[style*="green"] {
+  background: linear-gradient(135deg, rgba(29, 185, 84, 0.2) 0%, rgba(30, 215, 96, 0.1) 100%);
+  border: 1px solid rgba(29, 185, 84, 0.3);
+  color: #1ed760;
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    0 0 32px rgba(29, 185, 84, 0.1);
+}
+
+/* Error message */
+.add-playlist-container p[style*="red"] {
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.2) 0%, rgba(255, 107, 107, 0.1) 100%);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  color: #ff6b6b;
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    0 0 32px rgba(255, 107, 107, 0.1);
+}
+
+/* Floating action animation */
+@keyframes floatAction {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.add-playlist-container button {
+  animation: floatAction 3s ease-in-out infinite;
+}
+
+.add-playlist-container button:hover {
+  animation: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .add-playlist-container {
+    padding: 24px 20px;
+  }
+  
+  .add-playlist-container h2 {
+    font-size: 2.5rem;
+    margin-bottom: 32px;
+  }
+  
+  .add-playlist-container input[type="text"] {
+    max-width: 100%;
+    padding: 18px 20px;
+    font-size: 1rem;
+    margin-bottom: 28px;
+  }
+  
+  .add-playlist-container button {
+    padding: 16px 40px;
+    font-size: 1rem;
+    min-width: 180px;
+  }
+  
+  .add-playlist-container p {
+    max-width: 100%;
+    padding: 14px 20px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .add-playlist-container {
+    padding: 20px 16px;
+  }
+  
+  .add-playlist-container h2 {
+    font-size: 2rem;
+    margin-bottom: 28px;
+  }
+  
+  .add-playlist-container input[type="text"] {
+    padding: 16px 18px;
+    font-size: 0.95rem;
+    margin-bottom: 24px;
+  }
+  
+  .add-playlist-container button {
+    padding: 14px 32px;
+    font-size: 0.95rem;
+    min-width: 160px;
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .add-playlist-container::before,
+  .add-playlist-container::after {
+    animation: none;
+  }
+  
+  .add-playlist-container h2 {
+    animation: none;
+  }
+  
+  .add-playlist-container button {
+    animation: none;
+  }
+}
+
+/* Dark mode enhancements */
+@media (prefers-color-scheme: dark) {
+  .add-playlist-container {
+    background: linear-gradient(135deg, #0a0a15 0%, #141426 50%, #0e1a2e 100%);
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .add-playlist-container input[type="text"] {
+    border-color: #ffffff;
+    background: rgba(0, 0, 0, 0.8);
+  }
+  
+  .add-playlist-container button {
+    background: #1db954;
+    color: #000000;
+  }
+}
+
+/* Glass morphism card variant (alternative layout) */
+.add-playlist-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 48px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 
+    0 16px 64px rgba(0, 0, 0, 0.3),
+    0 8px 32px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.add-playlist-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+}
+
+/* Optional: Add this class to the container for card layout */
+.add-playlist-container.card-layout {
+  padding: 32px;
+}
+
+.add-playlist-container.card-layout > * {
+  width: 100%;
+}
+
+/* Loading state for button */
+.add-playlist-container button.loading {
+  color: transparent;
+  pointer-events: none;
+  position: relative;
+}
+
+.add-playlist-container button.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  border: 2px solid transparent;
+  border-top: 2px solid #000000;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}

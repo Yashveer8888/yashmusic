@@ -3,20 +3,23 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Plus, ArrowLeft, Play, Pause, MoreHorizontal } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
-import '../style/library.css';
+import '../style/PlaylistSong.css'; // Ensure you have this CSS file for styling
 
 const PlaylistSong = () => {
-  const { user, playlistName } = useContext(AuthContext);
+  const { 
+    user,
+    playlistname, 
+    setCurrentTrack, 
+    setIsPlaying, 
+    isPlaying, 
+    currentTrack,
+    setCurrentTrackIndex
+  } = useContext(AuthContext);
   const [songs, setSongs] = useState([]);
   const [playlistInfo, setPlaylistInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentPlayingSong, setCurrentPlayingSong] = useState(null);
   const navigate = useNavigate();
-
-  // Debug: Log the context values
-  console.log('Debug - user:', user);
-  console.log('Debug - playlistName:', playlistName);
 
   useEffect(() => {
     const fetchPlaylistSongs = async () => {
@@ -25,53 +28,86 @@ const PlaylistSong = () => {
         setError(null);
 
         // Enhanced validation with detailed error messages
-        if (!user) {
+        if (!user || user.trim() === '') {
           setError("User not found in context. Please log in again.");
           setLoading(false);
           return;
         }
 
-        if (!playlistName) {
+        if (!playlistname || playlistname.trim() === '') {
           setError("Playlist name not found. Please select a playlist from library.");
           setLoading(false);
           return;
         }
 
-        console.log('Making API call with:', { user, playlistName });
+        // Add timeout and better error handling
+        const controller = new AbortController();
 
-        // Fixed: Use correct API endpoint structure
+        // Fixed: Use correct API endpoint structure with proper error handling
         const response = await axios.get(
-          `http://localhost:5000/api/music/${encodeURIComponent(user)}/${encodeURIComponent(playlistName)}`,
+          `http://localhost:5000/api/music/playlist/${user}/${playlistname}`,
           {
+            signal: controller.signal,
             headers: {
               'Content-Type': 'application/json',
             },
           }
         );
 
-        console.log('API Response:', response.data);
-
         if (response.data) {
+          // Handle different possible response structures
+          const data = response.data;
+          
           // Set playlist info
           setPlaylistInfo({
-            name: response.data.playlistName,
-            usermail: response.data.usermail,
-            size: response.data.size || 0
+            name: data.playlistName || playlistname,
+            usermail: data.usermail || user,
+            size: data.size || data.songs?.length || 0
           });
 
-          // Set songs array
-          setSongs(response.data.songs || []);
+          // Set songs array - handle different possible structures
+          const songsArray = data.songs || data.data || [];
+          if (Array.isArray(songsArray)) {
+            setSongs(songsArray);
+          } else {
+            console.warn('Songs data is not an array:', songsArray);
+            setSongs([]);
+          }
         } else {
-          console.warn('Unexpected response structure:', response.data);
+          console.warn('No data in response:', response);
+          setError('No data received from server');
           setSongs([]);
         }
       } catch (error) {
         console.error('Error fetching playlist songs:', error);
-        setError(
-          error.response?.data?.message || 
-          error.message || 
-          'Failed to fetch playlist songs'
-        );
+        
+        // Handle different types of errors
+        if (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK') {
+          setError('Unable to connect to server. Please check if the server is running on http://localhost:5000');
+        } else if (error.name === 'AbortError') {
+          setError('Request timed out. Please try again.');
+        } else if (error.response) {
+          // Server responded with error status
+          const status = error.response.status;
+          const message = error.response.data?.message || error.response.statusText;
+          
+          if (status === 404) {
+            setError('Playlist not found. Please check if the playlist exists.');
+          } else if (status === 401) {
+            setError('Authentication required. Please log in again.');
+          } else if (status === 403) {
+            setError('Access denied. You may not have permission to view this playlist.');
+          } else if (status === 500) {
+            setError('Server error. Please try again later.');
+          } else {
+            setError(`Server error (${status}): ${message}`);
+          }
+        } else if (error.request) {
+          // Request was made but no response received
+          setError('No response from server. Please check your internet connection and server status.');
+        } else {
+          setError(error.message || 'An unexpected error occurred');
+        }
         setSongs([]);
       } finally {
         setLoading(false);
@@ -79,28 +115,61 @@ const PlaylistSong = () => {
     };
 
     // Only fetch if we have both user and playlistName
-    if (user && playlistName) {
+    if (user && playlistname) {
       fetchPlaylistSongs();
     } else {
       setLoading(false);
       if (!user) {
-        setError("User not found in context");
-      } else if (!playlistName) {
-        setError("Playlist name not found in context");
+        setError("User not found in context. Please log in.");
+      } else if (!playlistname) {
+        setError("Playlist name not found in context. Please select a playlist.");
       }
     }
-  }, [user, playlistName]); // Fixed: Added proper dependencies
+  }, [user, playlistname]);
 
-  const handlePlaySong = (song, index) => {
-    if (currentPlayingSong === index) {
-      setCurrentPlayingSong(null); // Pause if already playing
+  // Combined function to handle song play/pause
+  const handlePlaySong = (song, index, e) => {
+    // Stop event propagation to prevent conflicts
+    if (e) {
+      e.stopPropagation();
+    }
+    
+    console.log('Playing song:', song);
+    
+    // Format track for the global player
+    const formattedTrack = {
+      id: song.id,
+      title: song.title,
+      artist: song.artist || song.performers,
+      image: song.image || song.albumArt,
+      duration: song.duration || song.length,
+      youtubeUrl: song.youtubeUrl,
+      embedUrl: song.embedUrl,
+      viewCount: song.viewCount
+    };
+    
+    // Check if this is the currently playing track
+    if (currentTrack?.id === song.id) {
+      // Toggle play/pause for the same track
+      setIsPlaying(!isPlaying);
+      setCurrentTrackIndex(isPlaying ? null : index);
     } else {
-      setCurrentPlayingSong(index); // Play song
+      // Play new track
+      setCurrentTrack(formattedTrack);
+      setIsPlaying(true);
+      setCurrentTrackIndex(index);
     }
   };
 
   const handleBackToLibrary = () => {
     navigate('/library');
+  };
+
+  const handleRetry = () => {
+    setError(null);
+    setLoading(true);
+    // Force re-fetch by reloading or you could call fetchPlaylistSongs directly
+    window.location.reload();
   };
 
   // Loading state
@@ -134,9 +203,14 @@ const PlaylistSong = () => {
         <div className="error-container">
           <h2>Something went wrong</h2>
           <p>{error}</p>
-          <button onClick={() => window.location.reload()} className="retry-btn">
-            Try Again
-          </button>
+          <div className="error-actions">
+            <button onClick={handleRetry} className="retry-btn">
+              Try Again
+            </button>
+            <button onClick={handleBackToLibrary} className="back-to-library-btn">
+              Back to Library
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -150,12 +224,15 @@ const PlaylistSong = () => {
           <ArrowLeft size={24} />
         </button>
         <div className="playlist-info-header">
-          <h1>{playlistInfo?.name || playlistName}</h1>
+          <h1>{playlistInfo?.name || playlistname}</h1>
           <p className="playlist-meta">
             {playlistInfo?.size || songs.length} song{(playlistInfo?.size || songs.length) !== 1 ? 's' : ''}
+            {playlistInfo?.usermail && (
+              <span className="playlist-owner"> • by {playlistInfo.usermail}</span>
+            )}
           </p>
         </div>
-        <Link to="/addplaylist" className="add-btn">
+        <Link to="/addplaylist" className="add-btn" title="Create New Playlist">
           <Plus size={22} />
         </Link>
       </div>
@@ -168,9 +245,14 @@ const PlaylistSong = () => {
           </div>
           <h2>No songs in this playlist</h2>
           <p>Start adding songs to make it yours!</p>
-          <Link to="/search" className="add-songs-btn">
-            Find Songs
-          </Link>
+          <div className="empty-actions">
+            <Link to="/search" className="add-songs-btn">
+              Find Songs
+            </Link>
+            <button onClick={handleBackToLibrary} className="back-to-library-btn">
+              Back to Library
+            </button>
+          </div>
         </div>
       ) : (
         <div className="songs-section">
@@ -184,14 +266,20 @@ const PlaylistSong = () => {
           <div className="songs-list">
             {songs.map((song, index) => (
               <div 
-                className={`song-item ${currentPlayingSong === index ? 'playing' : ''}`}
-                key={`${song.title}-${index}`}
+                // Fixed: onclick -> onClick and added proper event handling
+                onClick={(e) => handlePlaySong(song, index, e)}
+                className={`song-item ${
+                  currentTrack?.id === song.id && isPlaying ? 'playing' : ''
+                }`}
+                key={`${song.id || song.title || 'song'}-${index}`}
+                style={{ cursor: 'pointer' }}
               >
                 <div className="song-number-col">
-                  {currentPlayingSong === index ? (
+                  {currentTrack?.id === song.id && isPlaying ? (
                     <button 
-                      className="play-pause-btn"
-                      onClick={() => handlePlaySong(song, index)}
+                      className="play-pause-btn active"
+                      onClick={(e) => handlePlaySong(song, index, e)}
+                      title="Pause"
                     >
                       <Pause size={16} />
                     </button>
@@ -200,7 +288,8 @@ const PlaylistSong = () => {
                       <span className="song-index">{index + 1}</span>
                       <button 
                         className="play-pause-btn"
-                        onClick={() => handlePlaySong(song, index)}
+                        onClick={(e) => handlePlaySong(song, index, e)}
+                        title="Play"
                       >
                         <Play size={16} />
                       </button>
@@ -211,8 +300,8 @@ const PlaylistSong = () => {
                 <div className="song-info">
                   <div className="song-cover">
                     <img 
-                      src={song.image || '/default-song-cover.jpg'} 
-                      alt={song.title}
+                      src={song.image || song.albumArt || '/default-song-cover.jpg'} 
+                      alt={song.title || 'Song cover'}
                       onError={(e) => {
                         e.target.src = '/default-song-cover.jpg';
                       }}
@@ -220,16 +309,23 @@ const PlaylistSong = () => {
                   </div>
                   <div className="song-details">
                     <h3 className="song-title">{song.title || 'Unknown Title'}</h3>
-                    <p className="song-artist">{song.artist || 'Unknown Artist'}</p>
+                    <p className="song-artist">{song.artist || song.performers || 'Unknown Artist'}</p>
                   </div>
                 </div>
                 
                 <div className="song-duration">
-                  {song.duration || '0:00'}
+                  {song.duration || song.length || '0:00'}
                 </div>
                 
                 <div className="song-actions">
-                  <button className="more-btn">
+                  <button 
+                    className="more-btn" 
+                    title="More options"
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent song from playing when clicking more options
+                      // Add your more options logic here
+                    }}
+                  >
                     <MoreHorizontal size={16} />
                   </button>
                 </div>

@@ -3,9 +3,11 @@ import { Play } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import '../style/HomePage.css';
+import { useNavigate } from 'react-router-dom';
 
 const HomePage = () => {
-  const { setCurrentTrack, setIsPlaying, user } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const { setCurrentTrack, setIsPlaying, user, setSearchQuery } = useContext(AuthContext);
 
   const featuredPlaylists = [
     { id: 1, title: "Today's Top Hits", image: '🎵', description: 'The hottest tracks right now' },
@@ -25,6 +27,10 @@ const HomePage = () => {
     setCurrentTrack(track);
     setIsPlaying(true);
   };
+  const GoToSearch = (query) => () => {
+    setSearchQuery(query);
+    navigate('/search');  
+  };
 
   return (
     <div className="page-container">
@@ -36,7 +42,11 @@ const HomePage = () => {
 
       <div className="featured-grid">
         {featuredPlaylists.map(p => (
-          <div key={p.id} className="featured-card group">
+          <div 
+            key={p.id} 
+            className="featured-card group"
+            onClick={GoToSearch(p.title)}
+          >
             <div className="card-flex">
               <div className="text-4xl">{p.image}</div>
               <div className="flex-1">
@@ -57,20 +67,6 @@ const HomePage = () => {
               <div className="card-img">{track.image}</div>
               <h3 className="card-track-title">{track.title}</h3>
               <p className="card-artist">{track.artist}</p>
-              <Play className="play-btn mt-2" size={32} />
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section>
-        <h2 className="section-title">Made for you</h2>
-        <div className="grid-cards">
-          {featuredPlaylists.map(p => (
-            <div key={p.id} className="card group">
-              <div className="card-img">{p.image}</div>
-              <h3 className="card-track-title">{p.title}</h3>
-              <p className="card-artist">{p.description}</p>
               <Play className="play-btn mt-2" size={32} />
             </div>
           ))}

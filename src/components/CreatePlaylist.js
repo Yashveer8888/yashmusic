@@ -1,39 +1,42 @@
 import React, { useState, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import '../style/CreatePlaylist.css'; // Ensure you have this CSS file for styling
 
 const AddPlaylist = () => {
-  const { usermail, setPlaylistname,palylistname } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const { user, playlistname, setPlaylistname } = useContext(AuthContext);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   const handleAddPlaylist = async () => {
-    if (!palylistname.trim()) {
+    if (!playlistname || playlistname.trim() === '') {
       setError('Please enter a valid playlist name.');
+      setSuccess('');
       return;
     }
 
     try {
-      // const token = await usermail.getIdToken();
-
       const response = await axios.post(
         'http://localhost:5000/api/music/create-playlist',
         {
-          usermail: usermail,
-          playlistName: palylistname.trim(),
-        },
-        {
-          headers: {
-            // Authorization: `Bearer ${token}`,
-          },
+          usermail: user,
+          playlistName: playlistname,
         }
+        // Add auth headers if needed
       );
 
       setSuccess(response.data.message);
-      setPlaylistname(''); 
-      navigator("/library"); 
+      setError('');
+      setPlaylistname('');
+      
+      setTimeout(() => {
+        navigate('/library');
+      }, 1000); // Delay to show success briefly
     } catch (err) {
       setError(err.response?.data?.message || 'Something went wrong.');
+      setSuccess('');
     }
   };
 
@@ -44,7 +47,7 @@ const AddPlaylist = () => {
       <input
         type="text"
         placeholder="Enter playlist name"
-        value={palylistname}
+        value={playlistname}
         onChange={(e) => setPlaylistname(e.target.value)}
       />
 

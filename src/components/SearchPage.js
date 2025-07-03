@@ -248,12 +248,11 @@ const SearchPage = () => {
                     <div 
                       key={`${track.id}-${index}`}
                       className={`track-item ${currentTrack?.id === track.id ? 'active' : ''}`}
-                      onClick={() => playTrack(track)}
                       role="button"
                       tabIndex={0}
                       onKeyDown={(e) => e.key === 'Enter' && playTrack(track)}
                     >
-                      <div className="track-number">
+                      <div className="track-number" onClick={() => playTrack(track)}>
                         <span className="track-index">{index + 1}</span>
                         <div className="play-button-overlay">
                           {currentTrack?.id === track.id && isPlaying ? (
@@ -264,7 +263,7 @@ const SearchPage = () => {
                         </div>
                       </div>
                       
-                      <div className="track-image-container">
+                      <div className="track-image-container" onClick={() => playTrack(track)}>
                         <img 
                           src={track.image} 
                           alt={track.title} 
@@ -280,7 +279,7 @@ const SearchPage = () => {
                         </div>
                       </div>
                       
-                      <div className="track-info">
+                      <div className="track-info" onClick={() => playTrack(track)}>
                         <h3 className="track-title" title={track.title}>
                           {track.title}
                         </h3>
@@ -290,20 +289,21 @@ const SearchPage = () => {
                         <span className="track-views">{track.viewCount} views</span>
                       </div>
                       
-                      <div className="track-duration">
+                      <div className="track-duration" onClick={() => playTrack(track)}>
                         {track.duration}
                       </div>
                       
-                      <div className="track-actions">
+                      <Link className="track-actions" to="/playlists">
                         <button 
                           className="action-button heart-button"
                           onClick={setSong(track)}
                           title="Add to playlist"
                           aria-label="Add to playlist"
                         >
-                        <PlusCircle size={16} />
+                        <PlusCircle 
+                         size={16} />
                         </button>
-                      </div>
+                      </Link>
                     </div>
                   ))
                 ) : (

@@ -1,18 +1,17 @@
 // AuthContext.js - Add these properties and functions to your existing context
 
 import React, { createContext, useState } from 'react';
+import axios from 'axios';
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState("yash9@gmail.com");
-  const [palylistname, setPlaylistname] = useState("My Favorites");
-  const [song, setSong] = useState({
-    title: "",  
-    image: "",
-    artist: "", 
-    url: ""
-  });
+  const [playlistname, setPlaylistname] = useState("My5");
+  const [song, setSong] = useState(null);
+  const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
+  
   // Existing states
   const [currentTrack, setCurrentTrack] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -128,46 +127,50 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-
   // Example function to add a song to a playlist
-  const addSongToPlaylist = async (usermail,playlistname,song) => {
+  const addSongToPlaylist = async (user, playlistname, song) => {
     try {
-      const response = await fetch("http://localhost:5000/api/addSongToPlaylist", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          usermail: usermail,
+      // const token = await usermail.getIdToken();
+
+      const response = await axios.post(
+        'http://localhost:5000/api/music/add-song',
+        {
+          usermail: user,
           playlistName: playlistname,
-          song: {
-            title: song.title,
-            image: song.image,
-            artist: song.artist,
-            url: song.url
+          song: song
+        },
+        {
+          headers: {
+            // Authorization: `Bearer ${token}`,
           },
-        }),
-      });
-      const data = await response.json();
-      if (response.ok) {
-        alert("Song added successfully!");
-      } else {
-        alert("Error: " + data.message);
-      }
+        }
+      );
+
+      setSuccess(response.data.message);
+      setPlaylistname(''); 
+      setSong(null);
+      // navigator("/search"); // Uncomment if you have navigation function
+      
+      return response.data;
     } catch (err) {
-      alert("Something went wrong");
+      const errorMessage = err.response?.data?.message || 'Something went wrong.';
+      setError(errorMessage);
+      throw new Error(errorMessage);
     }
   };
-
 
   const value = {
     user,
     setUser,
     addSongToPlaylist,
-    palylistname,
+    playlistname,
     setPlaylistname,
     song,
     setSong,
+    success,
+    setSuccess,
+    error,
+    setError,
     // Existing values
     currentTrack,
     setCurrentTrack,

@@ -1,70 +1,71 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Plus, Music, User } from 'lucide-react';
-import '../style/library.css'; 
+// import '../style/ListOfPlaylist.css';
 import { AuthContext } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
 
 const ListOfPlaylist = () => {
-  const navigate = useNavigate(); // Fixed: use 'navigate' instead of 'navigator'
-  const { setPlaylistname } = useContext(AuthContext); 
+  const { user,  addSongToPlaylist, song  } = useContext(AuthContext);
   const [myPlaylists, setMyPlaylists] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  // Get usermail from localStorage, context, or props
-  const usermail = "yash9@gmail.com";
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchPlaylists = async () => {
-      if (!usermail) return;
-      
-      setLoading(true);
-      setError(null);
-      
+      // Check if user exists and is valid
+      if (!user || user.trim() === '') {
+        setLoading(false);
+        return;
+      }
+
       try {
-        // Fixed: Correct API endpoint to match your backend route
-        const response = await axios.get(`http://localhost:5000/api/music/getplaylist/${usermail}`, {
-          headers: {
-            'Content-Type': 'application/json',
-            // Authorization: `Bearer ${token}`, // Uncomment when using auth
-          },
-        });
+        setLoading(true);
+        
+        // Add timeout and better error handling
+        const controller = new AbortController();
+        
+        const response = await axios.get(
+          `http://localhost:5000/api/music//playlists/${user}`,
+          {
+            signal: controller.signal,
+          }
+        );
+        const data = response.data;
 
-        console.log('API Response:', response.data);
-
-        // Fixed: Handle the backend response structure correctly
-        if (response.data && Array.isArray(response.data.playlists)) {
-          const formattedPlaylists = response.data.playlists.map((playlist, index) => ({
-            id: `${playlist.name}-${index}`, // Generate unique ID
-            name: playlist.name,
-            songCount: playlist.songCount || 0,
-            size: playlist.size || 0,
-            image: '/default-playlist-cover.jpg', // Default image since backend doesn't provide images
+        if (data.success && Array.isArray(data.playlists)) {
+          const formattedPlaylists = data.playlists.map((playlist) => ({
+            name: playlist.name?.trim(),
+            songCount: playlist.songCount || playlist.totalSongs || 0,
+            image: playlist.image || '/default-playlist-cover.jpg',
           }));
-
           setMyPlaylists(formattedPlaylists);
+        } else if (data.success && data.playlists.length === 0) {
+          // Handle empty playlists case
+          setMyPlaylists([]);
         } else {
-          console.warn('Unexpected response structure:', response.data);
+          console.warn('Unexpected response structure:', data);
           setMyPlaylists([]);
         }
       } catch (error) {
         console.error('Error fetching playlists:', error);
-        setError('Failed to load playlists');
         setMyPlaylists([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchPlaylists();
-  }, [usermail]);
+    // Only fetch if user exists
+    if (user) {
+      fetchPlaylists();
+    } else {
+      setLoading(false);
+    }
+  }, [user]);
 
-  // Fixed: Return a function that can be used as event handler
-  const handlePlaylistClick = (playlistName) => () => {
-    setPlaylistname(playlistName);
-    navigate("/playlists");
+  const handlePlaylistClick = (playlistName) => {
+    addSongToPlaylist(user, playlistName, song);
+    navigate("/search");
   };
 
   if (loading) {
@@ -75,31 +76,17 @@ const ListOfPlaylist = () => {
             <User size={24} />
             <h1>Your Library</h1>
           </div>
+          <Link to="/addplaylist" className="add-btn" title="Create Playlist">
+            <Plus size={22} />
+          </Link>
         </div>
         <div className="loading-container">
-          <p>Loading playlists...</p>
+          <div className="loading-spinner"></div>
+          <p>Loading your playlists...</p>
         </div>
       </div>
     );
   }
-
-  if (error) {
-    return (
-      <div className="library-page">
-        <div className="library-header">
-          <div className="header-left">
-            <User size={24} />
-            <h1>Your Library</h1>
-          </div>
-        </div>
-        <div className="error-container">
-          <p>{error}</p>
-          <button onClick={() => window.location.reload()}>Retry</button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="library-page">
       <div className="library-header">
@@ -107,7 +94,7 @@ const ListOfPlaylist = () => {
           <User size={24} />
           <h1>Your Library</h1>
         </div>
-        <Link to="/addplaylist" className="add-btn" title="Create Playlist">
+        <Link to="/create-playlist" className="add-btn" title="Create Playlist">
           <Plus size={22} />
         </Link>
       </div>
@@ -119,54 +106,51 @@ const ListOfPlaylist = () => {
           </div>
           <h2>Create your first playlist</h2>
           <p>It's easy, we'll help you</p>
-          <Link to="/addplaylist" className="create-playlist-btn">
+          <Link to="/create-playlist" className="create-playlist-btn">
             Create Playlist
-          </Link>
+          </Link> 
         </div>
       ) : (
         <div className="playlist-section">
           <div className="section-header">
-            <h2>Recently Created</h2>
             <span className="playlist-count">
               {myPlaylists.length} playlist{myPlaylists.length !== 1 ? 's' : ''}
             </span>
           </div>
-          
+
           <div className="playlist-grid">
-            {myPlaylists.map((playlist) => (
-              <div 
-                className="playlist-card" 
-                key={playlist.id}
-                onClick={handlePlaylistClick(playlist.name)}
+            {myPlaylists.map((playlist, index) => (
+              <div
+                className="playlist-card"
+                key={`${playlist.name}-${index}`}
+                onClick={() => handlePlaylistClick(playlist.name)}
                 role="button"
                 tabIndex={0}
-                onKeyDown={(e) => e.key === 'Enter' && handlePlaylistClick(playlist.name)()}
               >
                 <div className="playlist-cover-container">
-                  <img 
-                    src={playlist.image} 
-                    alt={playlist.name} 
+                  <img
+                    src={playlist.image}
+                    alt={`${playlist.name} cover`}
                     className="playlist-cover"
                     onError={(e) => {
-                      e.target.src = '/default-playlist-cover.jpg';
+                      e.currentTarget.src = '/default-playlist-cover.jpg';
                     }}
                   />
                   <div className="play-overlay">
                     <div className="play-btn">
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M8 5v14l11-7z"/>
+                        <path d="M8 5v14l11-7z" />
                       </svg>
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="playlist-info">
                   <h3 className="playlist-title">{playlist.name}</h3>
                   <p className="playlist-description">
-                    {playlist.songCount > 0 
+                    {playlist.songCount > 0
                       ? `${playlist.songCount} song${playlist.songCount !== 1 ? 's' : ''}`
-                      : 'No songs yet'
-                    }
+                      : 'No songs yet'}
                   </p>
                 </div>
               </div>
