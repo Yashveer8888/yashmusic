@@ -6,6 +6,7 @@
 .pnp.js
 /backend
 /javalab
+/musicbackend
 
 # testing
 /coverage

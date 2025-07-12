@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useContext, useCallback } from 'react';
 import {
   Play, Pause, SkipBack, SkipForward,
-  Volume2, VolumeX, PlusCircle,
+  Volume2, VolumeX,
   Shuffle, Repeat, Repeat1
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
@@ -21,13 +21,9 @@ const NowPlayingBar = () => {
     playPreviousTrack,
     togglePlayPause,
     handleTrackEnd,
-    user,
-    addSongToPlaylist,
-    setSong
   } = useContext(AuthContext);
 
   const [isMuted, setIsMuted] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
   const [playerReady, setPlayerReady] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -41,96 +37,160 @@ const NowPlayingBar = () => {
   const isInitializingRef = useRef(false);
   const currentTrackIdRef = useRef(null);
 
-  // --- YouTube IFrame API Loading ---
-  useEffect(() => {
-    // Check if the script already exists
-    if (window.YT && window.YT.Player) {
-      setApiLoaded(true);
-      return;
-    }
-
-    // If the script is not loaded, create and append it
-    if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
-      const tag = document.createElement('script');
-      tag.src = 'https://www.youtube.com/iframe_api';
-      tag.async = true;
-      document.head.appendChild(tag);
-
-      // Set up the callback for when API is ready
-      window.onYouTubeIframeAPIReady = () => {
-        console.log('YouTube API Ready');
-        setApiLoaded(true);
-      };
-    } else {
-      // Script exists but API might not be ready yet
-      const checkApiReady = () => {
-        if (window.YT && window.YT.Player) {
-          setApiLoaded(true);
-        } else {
-          setTimeout(checkApiReady, 100);
-        }
-      };
-      checkApiReady();
-    }
-
-    return () => {
-      if (playerRef.current) {
-        destroyPlayer();
-      }
-    };
+  // Format time display (MM:SS)
+  const formatTime = useCallback((timeInSeconds) => {
+    if (isNaN(timeInSeconds) || timeInSeconds < 0) return '0:00';
+    const minutes = Math.floor(timeInSeconds / 60);
+    const seconds = Math.floor(timeInSeconds % 60).toString().padStart(2, '0');
+    return `${minutes}:${seconds}`;
   }, []);
 
-  // Separate effect for cleanup on unmount
-  useEffect(() => {
-    return () => {
-      destroyPlayer();
+  // --- Player Control Functions ---
+  const stopTimeTracking = useCallback(() => {
+    if (intervalRef.current) {
       clearInterval(intervalRef.current);
-    };
+      intervalRef.current = null;
+    }
   }, []);
 
-  // --- Player Setup and Track Changes ---
-  useEffect(() => {
-    if (currentTrack?.id && apiLoaded && !isInitializingRef.current) {
-      // Only setup if track actually changed
-      if (currentTrackIdRef.current !== currentTrack.id) {
-        currentTrackIdRef.current = currentTrack.id;
-        destroyPlayer();
-        setupPlayer(currentTrack.id);
+  const startTimeTracking = useCallback(() => {
+    stopTimeTracking();
+    intervalRef.current = setInterval(() => {
+      if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
+        try {
+          const newTime = playerRef.current.getCurrentTime();
+          if (!isNaN(newTime)) setCurrentTime(newTime);
+        } catch (err) {
+          console.warn('Error getting current time:', err);
+        }
       }
-    } else if (!currentTrack) {
-      currentTrackIdRef.current = null;
-      destroyPlayer();
-    }
-  }, [currentTrack?.id, apiLoaded]);
+    }, 1000);
+  }, [stopTimeTracking]);
 
-  // --- Progress Bar Update (moved to separate effect to avoid re-renders) ---
-  useEffect(() => {
-    const seekSlider = document.querySelector('.seek-slider');
-    if (seekSlider && duration > 0) {
-      const progressPercentage = (currentTime / duration) * 100;
-      seekSlider.style.setProperty('--progress', `${progressPercentage}%`);
+  const destroyPlayer = useCallback(() => {
+    stopTimeTracking();
+    if (playerRef.current && typeof playerRef.current.destroy === 'function') {
+      try {
+        playerRef.current.destroy();
+      } catch (err) {
+        console.warn('Error destroying YouTube player:', err);
+      }
     }
-  }, [currentTime, duration]);
+    playerRef.current = null;
+    setPlayerReady(false);
+    setCurrentTime(0);
+    setDuration(0);
+    isInitializingRef.current = false;
+  }, [stopTimeTracking]);
 
+  // --- Player Event Handlers ---
+  const onPlayerError = useCallback((event) => {
+    console.error('YouTube Player Error:', event.data);
+    const errorMessages = {
+      2: 'Invalid video ID',
+      5: 'HTML5 player error',
+      100: 'Video not found',
+      101: 'Video not allowed to be played in embedded players',
+      150: 'Video not allowed to be played in embedded players'
+    };
+    
+    setError(errorMessages[event.data] || "Failed to load track");
+    setIsLoading(false);
+    isInitializingRef.current = false;
+  }, []);
+
+  const onPlayerReady = useCallback((event) => {
+    console.log('Player ready for track:', currentTrack?.id);
+    setPlayerReady(true);
+    setIsLoading(false);
+    isInitializingRef.current = false;
+    
+    try {
+      const videoDuration = event.target.getDuration();
+      if (videoDuration > 0) setDuration(videoDuration);
+      
+      if (isMuted) event.target.mute();
+      else event.target.unMute();
+      
+      if (isPlaying) event.target.playVideo();
+    } catch (err) {
+      console.error('Error in onPlayerReady:', err);
+    }
+  }, [isMuted, isPlaying, currentTrack?.id]);
+
+  const handleLocalTrackEnd = useCallback(() => {
+    console.log('Track ended, handling next track...');
+    if (repeatMode === 'one') {
+      if (playerRef.current) {
+        playerRef.current.seekTo(0, true);
+        playerRef.current.playVideo();
+        setIsPlaying(true);
+      }
+    } else {
+      if (handleTrackEnd) {
+        handleTrackEnd();
+      } else if (playNextTrack) {
+        playNextTrack();
+      }
+    }
+  }, [repeatMode, handleTrackEnd, playNextTrack, setIsPlaying]);
+
+  const onPlayerStateChange = useCallback((event) => {
+    try {
+      switch (event.data) {
+        case window.YT.PlayerState.PLAYING:
+          setIsPlaying(true);
+          setIsLoading(false);
+          if (playerRef.current) {
+            const dur = playerRef.current.getDuration();
+            if (dur > 0) setDuration(dur);
+          }
+          startTimeTracking();
+          break;
+          
+        case window.YT.PlayerState.PAUSED:
+          setIsPlaying(false);
+          stopTimeTracking();
+          break;
+          
+        case window.YT.PlayerState.ENDED:
+          setIsPlaying(false);
+          stopTimeTracking();
+          setCurrentTime(0);
+          handleLocalTrackEnd();
+          break;
+          
+        case window.YT.PlayerState.BUFFERING:
+          setIsLoading(true);
+          break;
+          
+        case window.YT.PlayerState.CUED:
+          setIsLoading(false);
+          break;
+          
+        default:
+          break;
+      }
+    } catch (err) {
+      console.error('Error in onPlayerStateChange:', err);
+    }
+  }, [setIsPlaying, startTimeTracking, stopTimeTracking, handleLocalTrackEnd]);
+
+  // --- Player Initialization ---
   const setupPlayer = useCallback((videoId) => {
-    if (isInitializingRef.current) return;
+    if (isInitializingRef.current || !playerContainerRef.current) return;
     
     isInitializingRef.current = true;
     setIsLoading(true);
     setError(null);
     
-    if (!playerContainerRef.current) {
-      isInitializingRef.current = false;
-      return;
-    }
-
     try {
       playerRef.current = new window.YT.Player(playerContainerRef.current, {
         height: '0',
         width: '0',
         videoId: videoId,
         playerVars: {
-          autoplay: 0, // Don't autoplay initially to avoid state conflicts
+          autoplay: isPlaying ? 1 : 0,
           controls: 0,
           disablekb: 1,
           modestbranding: 1,
@@ -151,298 +211,114 @@ const NowPlayingBar = () => {
       setIsLoading(false);
       isInitializingRef.current = false;
     }
-  }, []);
+  }, [isPlaying, onPlayerError, onPlayerReady, onPlayerStateChange]);
 
-  const destroyPlayer = useCallback(() => {
-    stopTimeTracking();
-    if (playerRef.current && typeof playerRef.current.destroy === 'function') {
-      try {
-        playerRef.current.destroy();
-      } catch (err) {
-        console.warn('Error destroying YouTube player:', err);
-      }
-    }
-    playerRef.current = null;
-    setPlayerReady(false);
-    setCurrentTime(0);
-    setDuration(0);
-    isInitializingRef.current = false;
-  }, []);
-
-  // --- Player Event Handlers ---
-  const onPlayerReady = useCallback((event) => {
-    console.log('Player ready');
-    setPlayerReady(true);
-    setIsLoading(false);
-    isInitializingRef.current = false;
-    
-    try {
-      const videoDuration = event.target.getDuration();
-      if (videoDuration && videoDuration > 0) {
-        setDuration(videoDuration);
-      }
-      
-      // Set mute state
-      if (isMuted) {
-        event.target.mute();
-      } else {
-        event.target.unMute();
-      }
-      
-      // Only play if isPlaying is true
-      if (isPlaying) {
-        event.target.playVideo();
-      }
-    } catch (err) {
-      console.error('Error in onPlayerReady:', err);
-    }
-  }, [isMuted, isPlaying]);
-
-  const onPlayerStateChange = useCallback((event) => {
-    try {
-      switch (event.data) {
-        case window.YT.PlayerState.PLAYING:
-          // Use a timeout to avoid setState during render
-          setTimeout(() => {
-            setIsPlaying(true);
-            setIsLoading(false);
-          }, 0);
-          
-          if (playerRef.current) {
-            const dur = playerRef.current.getDuration();
-            if (dur && dur > 0) {
-              setDuration(dur);
-            }
-          }
-          startTimeTracking();
-          break;
-          
-        case window.YT.PlayerState.PAUSED:
-          setTimeout(() => {
-            setIsPlaying(false);
-          }, 0);
-          stopTimeTracking();
-          break;
-          
-        case window.YT.PlayerState.ENDED:
-          setTimeout(() => {
-            setIsPlaying(false);
-          }, 0);
-          stopTimeTracking();
-          setCurrentTime(0);
-          // Use timeout to avoid setState during render
-          setTimeout(() => {
-            handleLocalTrackEnd();
-          }, 0);
-          break;
-          
-        case window.YT.PlayerState.BUFFERING:
-          setIsLoading(true);
-          break;
-          
-        case window.YT.PlayerState.CUED:
-          setIsLoading(false);
-          break;
-          
-        default:
-          setIsLoading(false);
-          break;
-      }
-    } catch (err) {
-      console.error('Error in onPlayerStateChange:', err);
-    }
-  }, []);
-
-  const onPlayerError = useCallback((event) => {
-    console.error('YouTube Player Error:', event.data);
-    const errorMessages = {
-      2: 'Invalid video ID',
-      5: 'HTML5 player error',
-      100: 'Video not found',
-      101: 'Video not allowed to be played in embedded players',
-      150: 'Video not allowed to be played in embedded players'
-    };
-    
-    const errorMessage = errorMessages[event.data] || "Failed to load track";
-    setError(errorMessage);
-    setIsLoading(false);
-    isInitializingRef.current = false;
-  }, []);
-
-  // --- Play/Pause Sync (separate effect to avoid conflicts) ---
+  // --- YouTube API Loader ---
   useEffect(() => {
-    if (playerReady && playerRef.current && !isInitializingRef.current) {
-      try {
-        if (isPlaying) {
-          playerRef.current.playVideo();
-        } else {
-          playerRef.current.pauseVideo();
-        }
-      } catch (err) {
-        console.error('Error controlling playback:', err);
+    if (window.YT?.Player) {
+      setApiLoaded(true);
+      return;
+    }
+
+    if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
+      const tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      tag.async = true;
+      document.head.appendChild(tag);
+
+      window.onYouTubeIframeAPIReady = () => {
+        console.log('YouTube API Ready');
+        setApiLoaded(true);
+      };
+    }
+
+    return () => {
+      destroyPlayer();
+      clearInterval(intervalRef.current);
+    };
+  }, [destroyPlayer]);
+
+  // --- Track Change Handler ---
+  useEffect(() => {
+    if (!apiLoaded) return;
+
+    if (currentTrack?.id) {
+      if (currentTrackIdRef.current !== currentTrack.id) {
+        console.log('New track detected, initializing player...');
+        currentTrackIdRef.current = currentTrack.id;
+        destroyPlayer();
+        setupPlayer(currentTrack.id);
       }
+    } else {
+      currentTrackIdRef.current = null;
+      destroyPlayer();
+    }
+  }, [currentTrack?.id, apiLoaded, destroyPlayer, setupPlayer]);
+
+  // --- Play/Pause Sync ---
+  useEffect(() => {
+    if (!playerReady || !playerRef.current || isInitializingRef.current) return;
+    
+    try {
+      if (isPlaying) {
+        playerRef.current.playVideo();
+      } else {
+        playerRef.current.pauseVideo();
+      }
+    } catch (err) {
+      console.error('Error controlling playback:', err);
     }
   }, [isPlaying, playerReady]);
 
-  // --- Time Tracking ---
-  const startTimeTracking = useCallback(() => {
-    clearInterval(intervalRef.current);
-    intervalRef.current = setInterval(() => {
-      if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
-        try {
-          const newTime = playerRef.current.getCurrentTime();
-          if (newTime !== null && newTime !== undefined && !isNaN(newTime)) {
-            setCurrentTime(newTime);
-          }
-        } catch (err) {
-          console.warn('Error getting current time:', err);
-        }
-      }
-    }, 1000);
-  }, []);
-
-  const stopTimeTracking = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
+  // --- Progress Bar Update ---
+  useEffect(() => {
+    const seekSlider = document.querySelector('.seek-slider');
+    if (seekSlider && duration > 0) {
+      const progressPercentage = (currentTime / duration) * 100;
+      seekSlider.style.setProperty('--progress', `${progressPercentage}%`);
     }
-  }, []);
-
-  // --- Local Track End Handler ---
-  const handleLocalTrackEnd = useCallback(() => {
-    if (repeatMode === 'one') {
-      // Repeat current track
-      if (playerRef.current) {
-        try {
-          playerRef.current.seekTo(0, true);
-          playerRef.current.playVideo();
-          setIsPlaying(true);
-        } catch (err) {
-          console.error('Error repeating track:', err);
-        }
-      }
-    } else {
-      // Use context's handleTrackEnd or playNextTrack
-      if (handleTrackEnd) {
-        handleTrackEnd();
-      } else if (playNextTrack) {
-        playNextTrack();
-      }
-    }
-  }, [repeatMode, handleTrackEnd, playNextTrack]);
+  }, [currentTime, duration]);
 
   // --- UI Handlers ---
   const handleSeek = useCallback((e) => {
     const newTime = parseFloat(e.target.value);
     if (playerReady && playerRef.current && !isNaN(newTime)) {
-      try {
-        playerRef.current.seekTo(newTime, true);
-        setCurrentTime(newTime);
-        
-        // Update progress bar immediately
-        if (duration > 0) {
-          const progressPercentage = (newTime / duration) * 100;
-          e.target.style.setProperty('--progress', `${progressPercentage}%`);
-        }
-      } catch (err) {
-        console.error('Error seeking:', err);
-      }
+      playerRef.current.seekTo(newTime, true);
+      setCurrentTime(newTime);
     }
-  }, [playerReady, duration]);
+  }, [playerReady]);
 
   const toggleMute = useCallback(() => {
-    setIsMuted((prev) => {
-      const newMutedState = !prev;
-      if (playerReady && playerRef.current) {
-        try {
-          if (newMutedState) {
-            playerRef.current.mute();
-          } else {
-            playerRef.current.unMute();
-          }
-        } catch (err) {
-          console.error('Error toggling mute:', err);
-        }
-      }
-      return newMutedState;
+    if (!playerReady || !playerRef.current) return;
+    
+    setIsMuted(prev => {
+      const newMuted = !prev;
+      if (newMuted) playerRef.current.mute();
+      else playerRef.current.unMute();
+      return newMuted;
     });
   }, [playerReady]);
 
   const toggleShuffle = useCallback(() => {
-    if (setShuffleMode) {
-      setShuffleMode(prev => !prev);
-    }
+    setShuffleMode(prev => !prev);
   }, [setShuffleMode]);
 
   const toggleRepeat = useCallback(() => {
-    if (setRepeatMode) {
-      setRepeatMode(prev => {
-        if (prev === 'off') return 'all';
-        if (prev === 'all') return 'one';
-        return 'off';
-      });
-    }
+    setRepeatMode(prev => {
+      if (prev === 'off') return 'all';
+      if (prev === 'all') return 'one';
+      return 'off';
+    });
   }, [setRepeatMode]);
 
-  const handleLike = useCallback(async () => {
-    if (!currentTrack || !user) return;
-    
-    try {
-      // Set the current track as the song to be added
-      if (setSong) {
-        setSong(currentTrack);
-      }
-      
-      // Add to playlist using context function
-      if (addSongToPlaylist) {
-        await addSongToPlaylist(user, "Liked Songs", currentTrack);
-        setIsLiked(true);
-        console.log('Song added to playlist successfully!');
-      }
-    } catch (error) {
-      console.error('Error adding song to playlist:', error);
-      setError('Failed to add song to playlist');
-    }
-  }, [currentTrack, user, addSongToPlaylist, setSong]);
-
-  const formatTime = useCallback((timeInSeconds) => {
-    if (isNaN(timeInSeconds) || timeInSeconds < 0) return '0:00';
-    const minutes = Math.floor(timeInSeconds / 60);
-    const seconds = Math.floor(timeInSeconds % 60).toString().padStart(2, '0');
-    return `${minutes}:${seconds}`;
-  }, []);
-
-  // Custom play/pause toggle to avoid conflicts
-  const handlePlayPause = useCallback(() => {
-    if (togglePlayPause) {
-      togglePlayPause();
-    } else {
-      setIsPlaying(prev => !prev);
-    }
-  }, [togglePlayPause]);
-
-  const handlePrevious = useCallback(() => {
-    if (playPreviousTrack) {
-      playPreviousTrack();
-    }
-  }, [playPreviousTrack]);
-
-  const handleNext = useCallback(() => {
-    if (playNextTrack) {
-      playNextTrack();
-    }
-  }, [playNextTrack]);
-
-  if (!currentTrack) {
-    return null;
-  }
+  if (!currentTrack) return null;
 
   return (
     <div className="now-playing-bar">
       <div ref={playerContainerRef} style={{ position: 'absolute', top: -9999, left: -9999 }}></div>
 
       {error && (
-        <div className="error-message" style={{ color: 'red', fontSize: '12px', padding: '5px' }}>
+        <div className="error-message">
           {error}
         </div>
       )}
@@ -460,13 +336,6 @@ const NowPlayingBar = () => {
           <div className="track-title">{currentTrack.title || 'Unknown Track'}</div>
           <div className="track-artist">{currentTrack.artist || 'Unknown Artist'}</div>
         </div>
-        <button onClick={handleLike} className="like-button" disabled={!user}>
-          <PlusCircle 
-            size={20} 
-            fill={isLiked ? 'red' : 'none'} 
-            color={isLiked ? 'red' : 'currentColor'} 
-          />
-        </button>
       </div>
 
       <div className="player-controls">
@@ -479,20 +348,20 @@ const NowPlayingBar = () => {
             <Shuffle size={16} />
           </button>
           <button 
-            onClick={handlePrevious} 
+            onClick={playPreviousTrack} 
             disabled={isLoading || !playlist || playlist.length === 0}
           >
             <SkipBack size={20} />
           </button>
           <button 
-            onClick={handlePlayPause} 
+            onClick={togglePlayPause} 
             disabled={isLoading || !playerReady} 
             className="play-pause-button"
           >
             {isPlaying ? <Pause size={28} /> : <Play size={28} />}
           </button>
           <button 
-            onClick={handleNext} 
+            onClick={playNextTrack} 
             disabled={isLoading || !playlist || playlist.length === 0}
           >
             <SkipForward size={20} />

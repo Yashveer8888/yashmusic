@@ -1,4 +1,4 @@
-import { Home, Search, Library, Download } from 'lucide-react';
+import { Home, Search, Library } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import '../style/Sidebar.css';
 
@@ -8,7 +8,7 @@ const Sidebar = () => {
     { to: '/', icon: <Home size={24} />, label: 'Home' },
     { to: '/search', icon: <Search size={24} />, label: 'Search' },
     { to: '/library', icon: <Library size={24} />, label: 'Your Library' },
-    { to: '/downloade', icon: <Download size={24} />, label: 'Downloaded' },
+    // { to: '/download', icon: <Download size={24} />, label: 'Downloaded' },
   ];
 
 

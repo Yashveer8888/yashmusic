@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from 'react';
-import { PlusCircle, Search, Play, Pause } from 'lucide-react';
+import { PlusCircle, Search, Play, Pause, } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import "../style/SearchPage.css";
@@ -10,10 +10,9 @@ const SearchPage = () => {
   const { 
     searchQuery, 
     setSearchQuery, 
-    setCurrentTrack, 
-    setIsPlaying, 
     isPlaying, 
     currentTrack,
+    playTrack,
     setSong
   } = useContext(AuthContext);
   
@@ -33,29 +32,25 @@ const SearchPage = () => {
       setError(null);
 
       try {
-        // Search for music videos
         const searchResponse = await fetch(
           `https://www.googleapis.com/youtube/v3/search?` + 
           new URLSearchParams({
             part: 'snippet',
             q: `${searchQuery} music song audio`,
             type: 'video',
-            videoCategoryId: '10', // Music category
-            maxResults: 5,
+            videoCategoryId: '10',
+            maxResults: 50,
             order: 'relevance',
             safeSearch: 'strict',
             key: YOUTUBE_API_KEY
           })
         );
         
-        if (!searchResponse.ok) {
-          throw new Error('Failed to fetch from YouTube API');
-        }
+        if (!searchResponse.ok) throw new Error('Failed to fetch from YouTube API');
         
         const searchData = await searchResponse.json();
         
-        if (searchData.items && searchData.items.length > 0) {
-          // Get video details including duration
+        if (searchData.items?.length > 0) {
           const videoIds = searchData.items.map(item => item.id.videoId).join(',');
           const detailsResponse = await fetch(
             `https://www.googleapis.com/youtube/v3/videos?` +
@@ -66,13 +61,10 @@ const SearchPage = () => {
             })
           );
           
-          if (!detailsResponse.ok) {
-            throw new Error('Failed to fetch video details');
-          }
+          if (!detailsResponse.ok) throw new Error('Failed to fetch video details');
           
           const detailsData = await detailsResponse.json();
           
-          // Combine search results with video details
           const results = searchData.items.map((item, index) => {
             const videoDetails = detailsData.items?.find(detail => detail.id === item.id.videoId);
             const duration = videoDetails?.contentDetails?.duration || 'PT0S';
@@ -85,18 +77,12 @@ const SearchPage = () => {
               image: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium?.url,
               duration: formatDuration(duration),
               viewCount: formatViewCount(viewCount),
-              publishedAt: new Date(item.snippet.publishedAt).toLocaleDateString(),
               youtubeUrl: `https://www.youtube.com/watch?v=${item.id.videoId}`,
-              embedUrl: `https://www.youtube.com/embed/${item.id.videoId}?autoplay=1&controls=1&rel=0`
+              embedUrl: `https://www.youtube.com/embed/${item.id.videoId}`
             };
           });
 
-          // Filter out likely non-music content
-          const musicResults = results.filter(item => 
-            isMusicContent(item.title, item.artist)
-          );
-
-          setYoutubeResults(musicResults);
+          setYoutubeResults(results.filter(item => isMusicContent(item.title, item.artist)));
         } else {
           setYoutubeResults([]);
         }
@@ -113,39 +99,15 @@ const SearchPage = () => {
     return () => clearTimeout(debounceTimer);
   }, [searchQuery]);
 
-  const cleanTitle = (title) => {
-    if (!title) return '';
-    return title
-      .replace(/\[.*?\]/g, '')
-      .replace(/\(.*?(official|audio|video|lyric|music).*?\)/gi, '')
-      .replace(/official\s+(video|audio|music\s+video)/gi, '')
-      .replace(/\s+/g, ' ')
-      .trim();
-  };
-
+  // Helper functions remain the same
+  const cleanTitle = (title) => title.replace(/\[.*?\]|\(.*?\)|official\s+(video|audio|music\s+video)/gi, '').trim();
+  
   const isMusicContent = (title, artist) => {
-    if (!title || !artist) return false;
-    
-    const musicKeywords = ['song', 'music', 'audio', 'track', 'single', 'album', 'cover', 'remix'];
     const nonMusicKeywords = ['tutorial', 'how to', 'review', 'reaction', 'live stream', 'news'];
-    
-    const titleLower = title.toLowerCase();
-    const artistLower = artist.toLowerCase();
-    
-    const hasMusicKeywords = musicKeywords.some(keyword => 
-      titleLower.includes(keyword) || artistLower.includes(keyword)
-    );
-    
-    const hasNonMusicKeywords = nonMusicKeywords.some(keyword => 
-      titleLower.includes(keyword)
-    );
-    
-    return !hasNonMusicKeywords && (hasMusicKeywords || titleLower.length < 50);
+    return !nonMusicKeywords.some(keyword => title.toLowerCase().includes(keyword));
   };
 
   const formatDuration = (duration) => {
-    if (!duration) return '0:00';
-    
     const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
     if (!match) return '0:00';
     
@@ -153,212 +115,137 @@ const SearchPage = () => {
     const minutes = parseInt(match[2]?.replace('M', '') || '0');
     const seconds = parseInt(match[3]?.replace('S', '') || '0');
     
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    }
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    return hours > 0 
+      ? `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+      : `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
   const formatViewCount = (count) => {
     const num = parseInt(count) || 0;
-    if (num >= 1000000000) return `${(num / 1000000000).toFixed(1)}B`;
-    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+    if (num >= 1e9) return `${(num / 1e9).toFixed(1)}B`;
+    if (num >= 1e6) return `${(num / 1e6).toFixed(1)}M`;
+    if (num >= 1e3) return `${(num / 1e3).toFixed(1)}K`;
     return num.toString();
   };
 
-  const playTrack = (track) => {
-    if (!track) return;
-    
-    const formattedTrack = {
-      id: track.id,
-      title: track.title,
-      artist: track.artist,
-      image: track.image,
-      duration: track.duration,
-      youtubeUrl: track.youtubeUrl,
-      embedUrl: track.embedUrl,
-      viewCount: track.viewCount
-    };
-    
-    if (currentTrack?.id === track.id) {
-      setIsPlaying(!isPlaying);
-    } else {
-      setCurrentTrack(formattedTrack);
-      setIsPlaying(true);
-    }
+  const handleAddToPlaylist = (track) => {
+    setSong(track);
   };
 
   const genres = [
-    { name: 'Bollywood Music', color: 'orange-red', emoji: '🎬' },
-    { name: 'Punjabi Songs', color: 'yellow-orange', emoji: '🎤' },
-    { name: 'Pop Music', color: 'pink-rose', emoji: '🎵' },
-    { name: 'Hip Hop Rap', color: 'purple-pink', emoji: '🎪' },
-    { name: 'Rock Music', color: 'red-pink', emoji: '🎸' },
-    { name: 'Classical Music', color: 'blue-indigo', emoji: '🎼' },
-    { name: 'Electronic Dance', color: 'cyan-blue', emoji: '🎛️' },
-    { name: 'Love Songs', color: 'rose-pink', emoji: '💕' }
+    { name: 'Bollywood', color: 'orange-red', emoji: '🎬' },
+    { name: 'Punjabi', color: 'yellow-orange', emoji: '🎤' },
+    { name: 'Pop', color: 'pink-rose', emoji: '🎵' },
+    { name: 'Hip Hop', color: 'purple-pink', emoji: '🎪' },
+    { name: 'Rock', color: 'red-pink', emoji: '🎸' },
+    { name: 'Classical', color: 'blue-indigo', emoji: '🎼' },
+    { name: 'EDM', color: 'cyan-blue', emoji: '🎛️' },
+    { name: 'Romantic', color: 'rose-pink', emoji: '💕' }
   ];
 
   const popularSearches = [
-    'Arijit Singh songs', 'Bollywood hits 2024', 'Punjabi latest songs',
-    'Ed Sheeran', 'Taylor Swift', 'AR Rahman music',
-    'Hindi romantic songs', 'English pop songs'
+    'Arijit Singh', 'Bollywood 2024', 'Punjabi hits',
+    'Ed Sheeran', 'Taylor Swift', 'AR Rahman',
+    'Romantic songs', 'Pop songs'
   ];
 
   return (
     <div className="search-page">
       <div className="search-container">
         <div className="search-header">
-          <h1 className="search-title">🎵 Music Search</h1>
+          <h1>🎵 Music Search</h1>
           <div className="search-input-wrapper">
-            <Search className="search-icon" size={20} />
+            <Search size={20} />
             <input
               type="text"
-              placeholder="Search for songs, artists, albums..."
+              placeholder="Search songs, artists..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input"
-              aria-label="Search for music"
             />
           </div>
         </div>
 
-        {error && (
-          <div className="error-message">
-            Error: {error}. Please try again later.
-          </div>
-        )}
+        {error && <div className="error-message">Error: {error}</div>}
 
         {searchQuery ? (
           <div className="search-results">
-            <h2 className="results-title">
-              {loading ? '🔍 Searching...' : `🎶 Results for "${searchQuery}"`}
-            </h2>
+            <h2>{loading ? '🔍 Searching...' : `🎶 Results for "${searchQuery}"`}</h2>
             
             {loading ? (
-              <div className="loading-container">
-                <div className="loading-spinner"></div>
-                <p className="loading-text">Finding the best music for you...</p>
-              </div>
-            ) : (
-              <div className="track-list">
-                {youtubeResults.length > 0 ? (
-                  youtubeResults.map((track, index) => (
-                    <div 
-                      key={`${track.id}-${index}`}
-                      className={`track-item ${currentTrack?.id === track.id ? 'active' : ''}`}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => e.key === 'Enter' && playTrack(track)}
-                    >
-                      <div className="track-number" onClick={() => playTrack(track)}>
-                        <span className="track-index">{index + 1}</span>
-                        <div className="play-button-overlay">
-                          {currentTrack?.id === track.id && isPlaying ? (
-                            <Pause className="play-icon" size={20} />
-                          ) : (
-                            <Play className="play-icon" size={20} />
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="track-image-container" onClick={() => playTrack(track)}>
-                        <img 
-                          src={track.image} 
-                          alt={track.title} 
-                          className="track-image"
-                          loading="lazy"
-                        />
-                        <div className="image-overlay">
-                          {currentTrack?.id === track.id && isPlaying ? (
-                            <Pause className="overlay-icon" size={20} />
-                          ) : (
-                            <Play className="overlay-icon" size={20} />
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="track-info" onClick={() => playTrack(track)}>
-                        <h3 className="track-title" title={track.title}>
-                          {track.title}
-                        </h3>
-                        <p className="track-artist" title={track.artist}>
-                          {track.artist}
-                        </p>
-                        <span className="track-views">{track.viewCount} views</span>
-                      </div>
-                      
-                      <div className="track-duration" onClick={() => playTrack(track)}>
-                        {track.duration}
-                      </div>
-                      
-                      <Link className="track-actions" to="/playlists">
-                        <button 
-                          className="action-button heart-button"
-                          onClick={setSong(track)}
-                          title="Add to playlist"
-                          aria-label="Add to playlist"
-                        >
-                        <PlusCircle 
-                         size={16} />
-                        </button>
-                      </Link>
-                    </div>
-                  ))
-                ) : (
-                  <div className="no-results">
-                    <div className="no-results-emoji">😞</div>
-                    <h3 className="no-results-title">No music found</h3>
-                    <p className="no-results-text">Try searching for different artists, songs, or genres.</p>
-                    <div className="suggestions">
-                      <p className="suggestions-title">Try these popular searches:</p>
-                      <div className="suggestions-list">
-                        {popularSearches.slice(0, 4).map((suggestion, index) => (
-                          <button
-                            key={index}
-                            className="suggestion-button"
-                            onClick={() => setSearchQuery(suggestion)}
-                          >
-                            {suggestion}
-                          </button>
-                        ))}
-                      </div>
+              <div className="loading-spinner"></div>
+            ) : youtubeResults.length > 0 ? (
+              youtubeResults.map((track, index) => (
+                <div 
+                  key={`${track.id}-${index}`}
+                  className={`track-item ${currentTrack?.id === track.id ? 'active' : ''}`}
+                  onClick={() => playTrack(track, youtubeResults)}
+                >
+                  <div className="track-number">
+                    <span>{index + 1}</span>
+                    <div className="play-button-overlay">
+                      {currentTrack?.id === track.id && isPlaying ? <Pause size={20} /> : <Play size={20} />}
                     </div>
                   </div>
-                )}
+                  
+                  <div className="track-image-container">
+                    <img src={track.image} alt={track.title} loading="lazy" />
+                  </div>
+                  
+                  <div className="track-info">
+                    <h3>{track.title}</h3>
+                    <p>{track.artist}</p>
+                    <span>{track.viewCount} views</span>
+                  </div>
+                  
+                  <div className="track-duration">{track.duration}</div>
+                  
+                  <Link
+                    to="./playlists"
+                    className="add-to-playlist"
+                    onClick={handleAddToPlaylist(track)}
+                  >
+                    <PlusCircle size={16} />
+                  </Link>
+                </div>
+              ))
+            ) : (
+              <div className="no-results">
+                <p>No music found. Try these:</p>
+                <div className="suggestions">
+                  {popularSearches.slice(0, 4).map((suggestion, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setSearchQuery(suggestion)}
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
         ) : (
           <div className="browse-section">
-            <h2 className="section-title">🎭 Browse by Genre</h2>
+            <h2>🎭 Browse Genres</h2>
             <div className="genre-grid">
               {genres.map((genre, index) => (
                 <div
                   key={index}
                   className={`genre-card ${genre.color}`}
                   onClick={() => setSearchQuery(genre.name)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => e.key === 'Enter' && setSearchQuery(genre.name)}
                 >
-                  <h3 className="genre-name">{genre.name}</h3>
-                  <div className="genre-emoji">
-                    {genre.emoji}
-                  </div>
-                  <div className="genre-overlay"></div>
+                  <h3>{genre.name}</h3>
+                  <div className="genre-emoji">{genre.emoji}</div>
                 </div>
               ))}
             </div>
             
             <div className="popular-section">
-              <h2 className="section-title">🔥 Popular Searches</h2>
+              <h2>🔥 Popular Searches</h2>
               <div className="popular-list">
                 {popularSearches.map((suggestion, index) => (
                   <button
                     key={index}
-                    className="popular-button"
                     onClick={() => setSearchQuery(suggestion)}
                   >
                     {suggestion}

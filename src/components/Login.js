@@ -1,25 +1,25 @@
+// Login.js
 import React, { useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { loginWithGoogle } from "../firebaseConfig";
+import "../style/Login.css";
 
 const Login = () => {
   const { setUser, user } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  // Redirect user if already logged in
   useEffect(() => {
     if (user) {
-      console.log(user)
       navigate("/home");
     }
   }, [user, navigate]);
 
-  // Handle Google Login
   const handleGoogleLogin = async () => {
     try {
-      const user = await loginWithGoogle();
-      setUser(user);
+      const userData = await loginWithGoogle(); // ✅ renamed to avoid shadowing
+      console.log(user)
+      setUser(userData);
       navigate("/home");
     } catch (error) {
       console.error("Google Login Error:", error.message);
@@ -27,9 +27,9 @@ const Login = () => {
   };
 
   return (
-    <div>
+    <div className="login-container">
       <h2>Welcome to Yash Music</h2>
-      <button onClick={(handleGoogleLogin)}>Login with Google</button>
+      <button onClick={handleGoogleLogin}>Login with Google</button>
     </div>
   );
 };

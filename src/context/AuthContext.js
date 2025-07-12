@@ -1,13 +1,17 @@
 // AuthContext.js - Add these properties and functions to your existing context
 
-import React, { createContext, useState } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "../firebaseConfig"; // adjust path
+
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState("yash9@gmail.com");
-  const [playlistname, setPlaylistname] = useState("My5");
+
+  const [user, setUser] = useState(null);
+  const [playlistname, setPlaylistname] = useState(null);
   const [song, setSong] = useState(null);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
@@ -22,6 +26,18 @@ export const AuthProvider = ({ children }) => {
   const [currentTrackIndex, setCurrentTrackIndex] = useState(-1);
   const [shuffleMode, setShuffleMode] = useState(false);
   const [repeatMode, setRepeatMode] = useState('off');
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(firebaseUser); // ✅ user stays logged in after refresh
+      } else {
+        setUser(null);
+      }
+    });
+  
+    return () => unsubscribe();
+  }, []);
 
   // Function to play a specific track and update playlist
   const playTrack = (track, trackList = []) => {

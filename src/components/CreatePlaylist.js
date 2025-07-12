@@ -2,38 +2,37 @@ import React, { useState, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import '../style/CreatePlaylist.css'; // Ensure you have this CSS file for styling
+import '../style/CreatePlaylist.css'; // Optional: Make sure it's defined
 
 const AddPlaylist = () => {
   const navigate = useNavigate();
-  const { user, playlistname, setPlaylistname } = useContext(AuthContext);
+  const { user } = useContext(AuthContext); 
+  const [playlistName, setPlaylistName] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   const handleAddPlaylist = async () => {
-    if (!playlistname || playlistname.trim() === '') {
-      setError('Please enter a valid playlist name.');
+    const trimmedName = playlistName.trim();
+
+    if (!user || !trimmedName) {
+      setError('Please provide a valid playlist name.');
       setSuccess('');
       return;
     }
 
     try {
-      const response = await axios.post(
-        'http://localhost:5000/api/music/create-playlist',
-        {
-          usermail: user,
-          playlistName: playlistname,
-        }
-        // Add auth headers if needed
-      );
+      const response = await axios.post('http://localhost:5000/api/music/create-playlist', {
+        usermail: user?.email,
+        playlistName: trimmedName,
+      });
 
       setSuccess(response.data.message);
       setError('');
-      setPlaylistname('');
-      
+      setPlaylistName('');
+
       setTimeout(() => {
         navigate('/library');
-      }, 1000); // Delay to show success briefly
+      }, 1000);
     } catch (err) {
       setError(err.response?.data?.message || 'Something went wrong.');
       setSuccess('');
@@ -42,19 +41,19 @@ const AddPlaylist = () => {
 
   return (
     <div className="add-playlist-container">
-      <h2>Add Playlist</h2>
+      <h2>Create a New Playlist</h2>
 
       <input
         type="text"
         placeholder="Enter playlist name"
-        value={playlistname}
-        onChange={(e) => setPlaylistname(e.target.value)}
+        value={playlistName}
+        onChange={(e) => setPlaylistName(e.target.value)}
       />
 
       <button onClick={handleAddPlaylist}>Create Playlist</button>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {success && <p style={{ color: 'green' }}>{success}</p>}
+      {error && <p className="error-msg">{error}</p>}
+      {success && <p className="success-msg">{success}</p>}
     </div>
   );
 };

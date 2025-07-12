@@ -1,63 +1,150 @@
 /* Profile.css */
-body {
-  margin: 0;
-  padding: 0;
-  font-family: 'Circular', 'Helvetica Neue', sans-serif;
-  background-color: #121212;
-  color: #ffffff;
-}
-
 .profile-container {
-  max-width: 500px;
-  margin: 100px auto;
-  background-color: #1e1e1e;
-  border-radius: 12px;
+  max-width: 600px;
+  margin: 2rem auto;
   padding: 2rem;
-  box-shadow: 0 4px 20px rgba(0, 255, 81, 0.2);
-  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
-.profile-container:hover {
-  box-shadow: 0 6px 30px rgba(0, 255, 81, 0.3);
+.profile-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.profile-avatar {
+  margin-bottom: 1rem;
+}
+
+.profile-image {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 3px solid #1db954;
+  object-fit: cover;
+}
+
+.profile-placeholder {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1db954, #1ed760);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: bold;
+  margin: 0 auto;
 }
 
 .profile-title {
   font-size: 2rem;
   font-weight: bold;
-  color: #1db954; /* Spotify green */
-  margin-bottom: 0.5rem;
-  text-align: center;
+  margin: 0;
+  color: #1db954;
+}
+
+.profile-details {
+  margin-bottom: 2rem;
 }
 
 .profile-subtitle {
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   margin-bottom: 1.5rem;
+  color: #b3b3b3;
   text-align: center;
+}
+
+.profile-info-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border-left: 3px solid #1db954;
+}
+
+.info-label {
+  font-weight: 600;
   color: #b3b3b3;
 }
 
-.profile-info {
+.info-value {
+  color: white;
+  font-weight: 500;
+  text-align: right;
+  max-width: 60%;
+  word-break: break-word;
+}
+
+.profile-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.back-btn, .logout-btn {
+  padding: 0.75rem 2rem;
+  border: none;
+  border-radius: 25px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
   font-size: 1rem;
-  margin: 0.5rem 0;
-  color: #e0e0e0;
+}
+
+.back-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.back-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
 }
 
 .logout-btn {
-  margin-top: 2rem;
-  padding: 0.75rem 2rem;
-  background-color: #1db954;
+  background: linear-gradient(135deg, #e22134, #ff4757);
   color: white;
-  border: none;
-  border-radius: 24px;
-  font-weight: bold;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .logout-btn:hover {
-  background-color: #1ed760;
+  background: linear-gradient(135deg, #ff4757, #e22134);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(226, 33, 52, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .profile-container {
+    margin: 1rem;
+    padding: 1.5rem;
+  }
+  
+  .profile-title {
+    font-size: 1.5rem;
+  }
+  
+  .info-item {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
+  }
+  
+  .info-value {
+    max-width: 100%;
+  }
+  
+  .profile-actions {
+    flex-direction: column;
+  }
 }

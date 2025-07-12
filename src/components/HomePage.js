@@ -1,9 +1,8 @@
-import { useContext } from 'react';
+import React, { useContext } from 'react';
 import { Play } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import '../style/HomePage.css';
-import { useNavigate } from 'react-router-dom';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -27,9 +26,18 @@ const HomePage = () => {
     setCurrentTrack(track);
     setIsPlaying(true);
   };
-  const GoToSearch = (query) => () => {
+
+  const goToSearch = (query) => {
     setSearchQuery(query);
-    navigate('/search');  
+    navigate('/search');
+  };
+
+  // Get appropriate greeting based on time
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
   };
 
   return (
@@ -38,20 +46,22 @@ const HomePage = () => {
         <Link to="/profile">👤</Link>
       </div>
 
-      <h1 className="page-heading">Good evening {user?.email}</h1>
+      <h1 className="page-heading">
+        {getGreeting()}, {user?.displayName || user?.email || 'User'}!
+      </h1>
 
       <div className="featured-grid">
-        {featuredPlaylists.map(p => (
+        {featuredPlaylists.map(playlist => (
           <div 
-            key={p.id} 
+            key={playlist.id} 
             className="featured-card group"
-            onClick={GoToSearch(p.title)}
+            onClick={() => goToSearch(playlist.title)}
           >
             <div className="card-flex">
-              <div className="text-4xl">{p.image}</div>
+              <div className="text-4xl">{playlist.image}</div>
               <div className="flex-1">
-                <h3 className="card-title">{p.title}</h3>
-                <p className="card-desc">{p.description}</p>
+                <h3 className="card-title">{playlist.title}</h3>
+                <p className="card-desc">{playlist.description}</p>
               </div>
               <Play className="play-btn" size={40} />
             </div>
@@ -63,7 +73,11 @@ const HomePage = () => {
         <h2 className="section-title">Recently played</h2>
         <div className="grid-cards">
           {recentlyPlayed.map(track => (
-            <div key={track.id} onClick={() => playTrack(track)} className="card group">
+            <div 
+              key={track.id} 
+              onClick={() => playTrack(track)} 
+              className="card group"
+            >
               <div className="card-img">{track.image}</div>
               <h3 className="card-track-title">{track.title}</h3>
               <p className="card-artist">{track.artist}</p>
