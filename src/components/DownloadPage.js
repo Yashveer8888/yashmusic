@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useContext } from 'react';
 import { Music, ListMusic, Download, Trash2, Play, Pause } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import '../style/DownloadPage.css';
