@@ -1,43 +1,70 @@
-/* Login.css */
-
+/* ===== Spotify-Like Dark Theme ===== */
 .login-container {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  height: 100vh;
-  background: linear-gradient(135deg, #121212, #1DB954);
-  font-family: 'Helvetica Neue', sans-serif;
-}
-
-.login-box {
-  background-color: #181818;
-  padding: 40px;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  justify-content: center;
+  min-height: 100vh;
+  background-color: #121212; /* Spotify dark background */
+  color: #ffffff;
+  font-family: 'Circular', 'Helvetica Neue', sans-serif; /* Spotify-like font */
+  padding: 2rem;
   text-align: center;
-  color: white;
-  max-width: 400px;
-  width: 90%;
 }
 
-.login-box h2 {
-  margin-bottom: 25px;
-  font-size: 26px;
-  font-weight: 600;
+.login-container h2 {
+  margin-bottom: 2.5rem;
+  font-size: 2.2rem;
+  color: #1db954; /* Spotify brand green */
+  font-weight: 700;
+  letter-spacing: -0.5px;
 }
 
-.google-login-button {
-  padding: 12px 25px;
-  background-color: #1DB954;
-  color: white;
-  font-size: 16px;
-  font-weight: 500;
+/* Google Login Button - Spotify Style */
+.login-button {
+  padding: 14px 32px;
+  background-color: #1db954; /* Spotify green */
+  color: #121212;
   border: none;
-  border-radius: 30px;
+  border-radius: 500px; /* Spotify's pill-shaped buttons */
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(29, 185, 84, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.google-login-button:hover {
-  background-color: #1ed760;
+.login-button:hover {
+  background-color: #1ed760; /* Lighter green (Spotify hover effect) */
+  transform: scale(1.03);
+  box-shadow: 0 6px 16px rgba(29, 185, 84, 0.4);
+}
+
+.login-button:active {
+  transform: scale(0.98);
+  box-shadow: 0 2px 8px rgba(29, 185, 84, 0.3);
+}
+
+/* Google Icon (if using an SVG) */
+.google-icon {
+  width: 18px;
+  height: 18px;
+  filter: brightness(0) saturate(100%) invert(9%) sepia(10%) saturate(2000%) hue-rotate(160deg) brightness(95%) contrast(90%);
+}
+
+/* Optional: Add a subtle gradient overlay (like Spotify) */
+.login-container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 6px;
+  background: linear-gradient(90deg, #1db954, #1ed760);
+  z-index: 1;
 }

@@ -21,7 +21,7 @@ const AddPlaylist = () => {
     }
 
     try {
-      const response = await axios.post('http://localhost:5000/api/music/create-playlist', {
+      const response = await axios.post('https://yashmusic-backend.onrender.com/api/music/create-playlist', {
         usermail: user?.email,
         playlistName: trimmedName,
       });

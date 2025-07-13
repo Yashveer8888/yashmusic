@@ -1,177 +1,230 @@
-import React, { useState, useContext } from 'react';
-import { Music, ListMusic, Download, Trash2, Play, Pause } from 'lucide-react';
+import { useContext, useState, useEffect } from 'react';
+import { Download, Check, Music, PlusCircle, Play, Pause } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
-import '../style/DownloadPage.css';
+import "../style/DownloadPage.css";
 
 const DownloadPage = () => {
-  const { downloadedSongs, deleteDownloadedSong, playDownloadedSong, isPlaying, currentTrack } = useContext(AuthContext);
-  const [activeTab, setActiveTab] = useState('songs');
-  const [searchQuery, setSearchQuery] = useState('');
+  const { 
+    currentTrack,
+    isPlaying,
+    playTrack,
+    downloadedSongs,
+    setDownloadedSongs
+  } = useContext(AuthContext);
+  
+  const [downloadingId, setDownloadingId] = useState(null);
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState(null);
+  const [recentlyPlayed, setRecentlyPlayed] = useState([]);
 
-  // Filter downloaded songs based on search query
-  const filteredSongs = downloadedSongs.filter(song =>
-    song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    song.artist.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Load recently played songs from storage
+  useEffect(() => {
+    const storedRecent = JSON.parse(localStorage.getItem('recentlyPlayed') || '[]');
+    setRecentlyPlayed(storedRecent);
+  }, []);
 
-  // Group songs by playlist if available
-  const playlists = {};
-  downloadedSongs.forEach(song => {
-    if (song.playlist) {
-      if (!playlists[song.playlist]) {
-        playlists[song.playlist] = [];
-      }
-      playlists[song.playlist].push(song);
+  // Actual download function (simplified version)
+  const downloadSong = async (track) => {
+    setDownloadingId(track.id);
+    setProgress(0);
+    setError(null);
+
+    try {
+      // In a real app, you would:
+      // 1. Fetch audio stream from YouTube
+      // 2. Save to device storage
+      // Here's a mock implementation:
+      
+      // Simulate download progress
+      const updateProgress = () => {
+        return new Promise(resolve => {
+          const interval = setInterval(() => {
+            setProgress(prev => {
+              if (prev >= 100) {
+                clearInterval(interval);
+                resolve();
+                return 100;
+              }
+              return prev + 10;
+            });
+          }, 300);
+        });
+      };
+
+      await updateProgress();
+
+      // Create the downloaded song object
+      const newDownload = {
+        ...track,
+        offlineUri: `file://downloaded/${track.id}.mp3`,
+        downloadedAt: new Date().toISOString(),
+        fileSize: '3.2 MB' // Mock value
+      };
+
+      // Update context and local storage
+      setDownloadedSongs(prev => {
+        const updated = [...prev, newDownload];
+        localStorage.setItem('downloadedSongs', JSON.stringify(updated));
+        return updated;
+      });
+
+    } catch (err) {
+      setError('Download failed. Please check your connection.');
+      console.error('Download error:', err);
+    } finally {
+      setDownloadingId(null);
+      setProgress(0);
     }
-  });
-
-  const handlePlaySong = (song) => {
-    playDownloadedSong(song);
   };
 
-  const handleDeleteSong = (songId) => {
-    if (window.confirm('Are you sure you want to delete this downloaded song?')) {
-      deleteDownloadedSong(songId);
-    }
+  // Delete downloaded song
+  const deleteDownload = (id) => {
+    setDownloadedSongs(prev => {
+      const updated = prev.filter(song => song.id !== id);
+      localStorage.setItem('downloadedSongs', JSON.stringify(updated));
+      return updated;
+    });
   };
+
+  // Check download status
+  const isDownloaded = (id) => downloadedSongs.some(song => song.id === id);
 
   return (
     <div className="download-page">
       <div className="download-header">
-        <h1><Download size={24} /> Your Library</h1>
-        <div className="search-bar">
-          <input
-            type="text"
-            placeholder="Search in downloads..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
+        <h1><Music size={24} /> Offline Music</h1>
+        <p>Download songs to listen without internet</p>
       </div>
 
-      <div className="download-tabs">
-        <button
-          className={activeTab === 'songs' ? 'active' : ''}
-          onClick={() => setActiveTab('songs')}
-        >
-          <Music size={16} /> Songs
-        </button>
-        <button
-          className={activeTab === 'playlists' ? 'active' : ''}
-          onClick={() => setActiveTab('playlists')}
-        >
-          <ListMusic size={16} /> Playlists
-        </button>
-      </div>
+      {error && <div className="error-message">{error}</div>}
 
-      <div className="download-content">
-        {activeTab === 'songs' ? (
-          <div className="songs-list">
-            {filteredSongs.length > 0 ? (
-              <table>
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Title</th>
-                    <th>Artist</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredSongs.map((song, index) => (
-                    <tr
-                      key={song.id}
-                      className={currentTrack?.id === song.id ? 'active-song' : ''}
+      <div className="download-sections">
+        {/* Current Track Section */}
+        {currentTrack && (
+          <section className="current-track-section">
+            <h2>Now Playing</h2>
+            <div className={`track-card ${isPlaying && 'playing'}`}>
+              <img src={currentTrack.image} alt={currentTrack.title} />
+              <div className="track-info">
+                <h3>{currentTrack.title}</h3>
+                <p>{currentTrack.artist}</p>
+                <div className="track-actions">
+                  <button 
+                    className="play-button"
+                    onClick={() => playTrack(currentTrack, downloadedSongs)}
+                  >
+                    {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+                  </button>
+                  {!isDownloaded(currentTrack.id) ? (
+                    <button
+                      className="download-button"
+                      onClick={() => downloadSong(currentTrack)}
+                      disabled={downloadingId === currentTrack.id}
                     >
-                      <td>
-                        {currentTrack?.id === song.id && isPlaying ? (
-                          <Pause size={16} />
-                        ) : (
-                          <span>{index + 1}</span>
-                        )}
-                      </td>
-                      <td>
-                        <div className="song-info">
-                          <img
-                            src={song.image || '/placeholder-music.png'}
-                            alt={song.title}
-                            className="song-thumbnail"
-                            onError={(e) => {
-                              e.target.src = '/placeholder-music.png';
-                            }}
-                          />
-                          <span>{song.title}</span>
-                        </div>
-                      </td>
-                      <td>{song.artist}</td>
-                      <td>
-                        <div className="song-actions">
-                          <button onClick={() => handlePlaySong(song)}>
-                            {currentTrack?.id === song.id && isPlaying ? (
-                              <Pause size={16} />
-                            ) : (
-                              <Play size={16} />
-                            )}
-                          </button>
-                          <button
-                            onClick={() => handleDeleteSong(song.id)}
-                            className="delete-btn"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <div className="empty-state">
-                <Download size={48} />
-                <h3>No downloaded songs</h3>
-                <p>Download songs to listen offline</p>
+                      {downloadingId === currentTrack.id ? (
+                        `Downloading... ${progress}%`
+                      ) : (
+                        <>
+                          <Download size={16} /> Download
+                        </>
+                      )}
+                    </button>
+                  ) : (
+                    <span className="downloaded-badge">
+                      <Check size={16} /> Downloaded
+                    </span>
+                  )}
+                </div>
               </div>
-            )}
-          </div>
-        ) : (
-          <div className="playlists-grid">
-            {Object.keys(playlists).length > 0 ? (
-              Object.entries(playlists).map(([playlistName, songs]) => (
-                <div key={playlistName} className="playlist-card">
-                  <div className="playlist-image">
-                    {songs.slice(0, 4).map((song, index) => (
-                      <img
-                        key={index}
-                        src={song.image || '/placeholder-music.png'}
-                        alt={song.title}
-                        style={{
-                          position: 'absolute',
-                          top: index < 2 ? '0' : '50%',
-                          left: index % 2 === 0 ? '0' : '50%',
-                          width: '50%',
-                          height: '50%',
-                          objectFit: 'cover'
-                        }}
-                        onError={(e) => {
-                          e.target.src = '/placeholder-music.png';
-                        }}
-                      />
-                    ))}
+            </div>
+          </section>
+        )}
+
+        {/* Downloaded Songs Section */}
+        <section className="downloaded-songs-section">
+          <h2>Your Library ({downloadedSongs.length})</h2>
+          
+          {downloadedSongs.length > 0 ? (
+            <div className="songs-grid">
+              {downloadedSongs.map(song => (
+                <div 
+                  key={song.id} 
+                  className={`song-card ${currentTrack?.id === song.id ? 'active' : ''}`}
+                >
+                  <div className="card-image" onClick={() => playTrack(song, downloadedSongs)}>
+                    <img src={song.image} alt={song.title} />
+                    <div className="play-overlay">
+                      {currentTrack?.id === song.id && isPlaying ? (
+                        <Pause size={20} />
+                      ) : (
+                        <Play size={20} />
+                      )}
+                    </div>
                   </div>
-                  <div className="playlist-info">
-                    <h4>{playlistName}</h4>
-                    <p>{songs.length} songs</p>
+                  <div className="card-details">
+                    <h3>{song.title}</h3>
+                    <p>{song.artist}</p>
+                    <div className="card-meta">
+                      <span>{song.fileSize}</span>
+                      <div className="card-actions">
+                        <button 
+                          className="delete-button"
+                          onClick={() => deleteDownload(song.id)}
+                        >
+                          Delete
+                        </button>
+                        <button className="add-button">
+                          <PlusCircle size={16} />
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              ))
-            ) : (
-              <div className="empty-state">
-                <ListMusic size={48} />
-                <h3>No downloaded playlists</h3>
-                <p>Download playlists to listen offline</p>
-              </div>
-            )}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <p>No songs downloaded yet</p>
+              <p>Play a song and tap the download button to save it offline</p>
+            </div>
+          )}
+        </section>
+
+        {/* Recently Played Section */}
+        {recentlyPlayed.length > 0 && (
+          <section className="recently-played-section">
+            <h2>Recently Played</h2>
+            <div className="songs-list">
+              {recentlyPlayed.map(song => (
+                <div 
+                  key={song.id} 
+                  className="recent-song"
+                  onClick={() => playTrack(song, downloadedSongs)}
+                >
+                  <img src={song.image} alt={song.title} />
+                  <div className="song-info">
+                    <h3>{song.title}</h3>
+                    <p>{song.artist}</p>
+                  </div>
+                  {isDownloaded(song.id) ? (
+                    <span className="downloaded-badge">
+                      <Check size={16} /> Downloaded
+                    </span>
+                  ) : (
+                    <button 
+                      className="download-button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        downloadSong(song);
+                      }}
+                    >
+                      <Download size={16} />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
         )}
       </div>
     </div>

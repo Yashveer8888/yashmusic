@@ -14,7 +14,7 @@ const ListOfPlaylist = () => {
   const navigate = useNavigate();
 
   // Configuration
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  const API_BASE_URL = 'https://yashmusic-backend.onrender.com';
   const DEFAULT_PLAYLIST_IMAGE = '/default-playlist-cover.jpg';
 
   // Authentication check

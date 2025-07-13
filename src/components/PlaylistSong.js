@@ -48,7 +48,7 @@ const PlaylistSong = () => {
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 
         const response = await axios.get(
-          `http://localhost:5000/api/music/playlist/${user?.email}/${playlistname}`,
+          `https://yashmusic-backend.onrender.com/api/music/playlist/${user?.email}/${playlistname}`,
           {
             signal: controller.signal,
             headers: {
