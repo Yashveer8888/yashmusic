@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from 'react';
-import { PlusCircle, Search, Play, Pause, } from 'lucide-react';
+import { PlusCircle, Search, Play, Pause } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import "../style/SearchPage.css";
@@ -36,7 +36,7 @@ const SearchPage = () => {
           `https://www.googleapis.com/youtube/v3/search?` + 
           new URLSearchParams({
             part: 'snippet',
-            q: `${searchQuery} music song audio`,
+            q: `${searchQuery}`,
             type: 'video',
             videoCategoryId: '10',
             maxResults: 50,
@@ -99,7 +99,6 @@ const SearchPage = () => {
     return () => clearTimeout(debounceTimer);
   }, [searchQuery]);
 
-  // Helper functions remain the same
   const cleanTitle = (title) => title.replace(/\[.*?\]|\(.*?\)|official\s+(video|audio|music\s+video)/gi, '').trim();
   
   const isMusicContent = (title, artist) => {
@@ -153,7 +152,7 @@ const SearchPage = () => {
     <div className="search-page">
       <div className="search-container">
         <div className="search-header">
-          <h1>🎵 Music Search</h1>
+          <h1>🎵 Yash Music Search</h1>
           <div className="search-input-wrapper">
             <Search size={20} />
             <input
@@ -174,40 +173,41 @@ const SearchPage = () => {
             {loading ? (
               <div className="loading-spinner"></div>
             ) : youtubeResults.length > 0 ? (
-              youtubeResults.map((track, index) => (
-                <div 
-                  key={`${track.id}-${index}`}
-                  className={`track-item ${currentTrack?.id === track.id ? 'active' : ''}`}
-                  onClick={() => playTrack(track, youtubeResults)}
-                >
-                  <div className="track-number">
-                    <span>{index + 1}</span>
-                    <div className="play-button-overlay">
-                      {currentTrack?.id === track.id && isPlaying ? <Pause size={20} /> : <Play size={20} />}
-                    </div>
-                  </div>
-                  
-                  <div className="track-image-container">
-                    <img src={track.image} alt={track.title} loading="lazy" />
-                  </div>
-                  
-                  <div className="track-info">
-                    <h3>{track.title}</h3>
-                    <p>{track.artist}</p>
-                    <span>{track.viewCount} views</span>
-                  </div>
-                  
-                  <div className="track-duration">{track.duration}</div>
-                  
-                  <Link
-                    to="./playlists"
-                    className="add-to-playlist"
-                    onClick={handleAddToPlaylist(track)}
+              <div className="track-list">
+                {youtubeResults.map((track, index) => (
+                  <div 
+                    key={`${track.id}-${index}`}
+                    className={`track-item ${currentTrack?.id === track.id ? 'active' : ''}`}
+                    onClick={() => playTrack(track, youtubeResults)}
                   >
-                    <PlusCircle size={16} />
-                  </Link>
-                </div>
-              ))
+                    <div className="track-number">
+                      <span>{index + 1}</span>
+                      <div className="play-button-overlay">
+                        {currentTrack?.id === track.id && isPlaying ? <Pause size={20} /> : <Play size={20} />}
+                      </div>
+                    </div>
+                    
+                    <div className="track-image-container">
+                      <img src={track.image} alt={track.title} loading="lazy" />
+                    </div>
+                    
+                    <div className="track-info">
+                      <h3>{track.title}</h3>
+                      <div className="artist-views">
+                        <p>{track.artist} | {track.viewCount} views | {track.duration}</p>
+                      </div>
+                    </div>
+                    
+                    <Link
+                      to="./playlists"
+                      className="add-to-playlist"
+                      onClick={handleAddToPlaylist(track)}
+                    >
+                      <PlusCircle size={16} />
+                    </Link>
+                  </div>
+                ))}
+              </div>
             ) : (
               <div className="no-results">
                 <p>No music found. Try these:</p>

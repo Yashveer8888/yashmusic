@@ -23,6 +23,7 @@ const NowPlayingBar = () => {
     handleTrackEnd,
   } = useContext(AuthContext);
 
+  // State management
   const [isMuted, setIsMuted] = useState(false);
   const [playerReady, setPlayerReady] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -31,6 +32,7 @@ const NowPlayingBar = () => {
   const [error, setError] = useState(null);
   const [apiLoaded, setApiLoaded] = useState(false);
   
+  // Refs
   const playerRef = useRef(null);
   const intervalRef = useRef(null);
   const playerContainerRef = useRef(null);
@@ -45,37 +47,25 @@ const NowPlayingBar = () => {
     return `${minutes}:${seconds}`;
   }, []);
 
-  // --- Player Control Functions ---
+  // Player control functions
   const stopTimeTracking = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
+    clearInterval(intervalRef.current);
+    intervalRef.current = null;
   }, []);
 
   const startTimeTracking = useCallback(() => {
     stopTimeTracking();
     intervalRef.current = setInterval(() => {
-      if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
-        try {
-          const newTime = playerRef.current.getCurrentTime();
-          if (!isNaN(newTime)) setCurrentTime(newTime);
-        } catch (err) {
-          console.warn('Error getting current time:', err);
-        }
+      if (playerRef.current?.getCurrentTime) {
+        const newTime = playerRef.current.getCurrentTime();
+        if (!isNaN(newTime)) setCurrentTime(newTime);
       }
     }, 1000);
   }, [stopTimeTracking]);
 
   const destroyPlayer = useCallback(() => {
     stopTimeTracking();
-    if (playerRef.current && typeof playerRef.current.destroy === 'function') {
-      try {
-        playerRef.current.destroy();
-      } catch (err) {
-        console.warn('Error destroying YouTube player:', err);
-      }
-    }
+    if (playerRef.current?.destroy) playerRef.current.destroy();
     playerRef.current = null;
     setPlayerReady(false);
     setCurrentTime(0);
@@ -83,100 +73,70 @@ const NowPlayingBar = () => {
     isInitializingRef.current = false;
   }, [stopTimeTracking]);
 
-  // --- Player Event Handlers ---
+  // Event handlers
   const onPlayerError = useCallback((event) => {
-    console.error('YouTube Player Error:', event.data);
     const errorMessages = {
       2: 'Invalid video ID',
       5: 'HTML5 player error',
       100: 'Video not found',
-      101: 'Video not allowed to be played in embedded players',
-      150: 'Video not allowed to be played in embedded players'
+      101: 'Embedding not allowed',
+      150: 'Embedding not allowed'
     };
-    
-    setError(errorMessages[event.data] || "Failed to load track");
+    setError(errorMessages[event.data] || "Playback error");
     setIsLoading(false);
     isInitializingRef.current = false;
   }, []);
 
   const onPlayerReady = useCallback((event) => {
-    console.log('Player ready for track:', currentTrack?.id);
     setPlayerReady(true);
     setIsLoading(false);
     isInitializingRef.current = false;
     
-    try {
-      const videoDuration = event.target.getDuration();
-      if (videoDuration > 0) setDuration(videoDuration);
-      
-      if (isMuted) event.target.mute();
-      else event.target.unMute();
-      
-      if (isPlaying) event.target.playVideo();
-    } catch (err) {
-      console.error('Error in onPlayerReady:', err);
-    }
-  }, [isMuted, isPlaying, currentTrack?.id]);
+    const videoDuration = event.target.getDuration();
+    if (videoDuration > 0) setDuration(videoDuration);
+    
+    isMuted ? event.target.mute() : event.target.unMute();
+    if (isPlaying) event.target.playVideo();
+  }, [isMuted, isPlaying]);
 
-  const handleLocalTrackEnd = useCallback(() => {
-    console.log('Track ended, handling next track...');
+  const handleTrackEnded = useCallback(() => {
     if (repeatMode === 'one') {
-      if (playerRef.current) {
-        playerRef.current.seekTo(0, true);
-        playerRef.current.playVideo();
-        setIsPlaying(true);
-      }
+      playerRef.current?.seekTo(0)?.playVideo();
+      setIsPlaying(true);
     } else {
-      if (handleTrackEnd) {
-        handleTrackEnd();
-      } else if (playNextTrack) {
-        playNextTrack();
-      }
+      handleTrackEnd?.() || playNextTrack?.();
     }
   }, [repeatMode, handleTrackEnd, playNextTrack, setIsPlaying]);
 
   const onPlayerStateChange = useCallback((event) => {
-    try {
-      switch (event.data) {
-        case window.YT.PlayerState.PLAYING:
-          setIsPlaying(true);
-          setIsLoading(false);
-          if (playerRef.current) {
-            const dur = playerRef.current.getDuration();
-            if (dur > 0) setDuration(dur);
-          }
-          startTimeTracking();
-          break;
-          
-        case window.YT.PlayerState.PAUSED:
-          setIsPlaying(false);
-          stopTimeTracking();
-          break;
-          
-        case window.YT.PlayerState.ENDED:
-          setIsPlaying(false);
-          stopTimeTracking();
-          setCurrentTime(0);
-          handleLocalTrackEnd();
-          break;
-          
-        case window.YT.PlayerState.BUFFERING:
-          setIsLoading(true);
-          break;
-          
-        case window.YT.PlayerState.CUED:
-          setIsLoading(false);
-          break;
-          
-        default:
-          break;
-      }
-    } catch (err) {
-      console.error('Error in onPlayerStateChange:', err);
+    switch (event.data) {
+      case window.YT.PlayerState.PLAYING:
+        setIsPlaying(true);
+        setIsLoading(false);
+        startTimeTracking();
+        break;
+      case window.YT.PlayerState.PAUSED:
+        setIsPlaying(false);
+        stopTimeTracking();
+        break;
+      case window.YT.PlayerState.ENDED:
+        setIsPlaying(false);
+        stopTimeTracking();
+        setCurrentTime(0);
+        handleTrackEnded();
+        break;
+      case window.YT.PlayerState.BUFFERING:
+        setIsLoading(true);
+        break;
+      case window.YT.PlayerState.CUED:
+        setIsLoading(false);
+        break;
+      default:
+        break;
     }
-  }, [setIsPlaying, startTimeTracking, stopTimeTracking, handleLocalTrackEnd]);
+  }, [setIsPlaying, startTimeTracking, stopTimeTracking, handleTrackEnded]);
 
-  // --- Player Initialization ---
+  // Player initialization
   const setupPlayer = useCallback((videoId) => {
     if (isInitializingRef.current || !playerContainerRef.current) return;
     
@@ -188,7 +148,7 @@ const NowPlayingBar = () => {
       playerRef.current = new window.YT.Player(playerContainerRef.current, {
         height: '0',
         width: '0',
-        videoId: videoId,
+        videoId,
         playerVars: {
           autoplay: isPlaying ? 1 : 0,
           controls: 0,
@@ -206,30 +166,28 @@ const NowPlayingBar = () => {
         },
       });
     } catch (err) {
-      console.error('Error setting up YouTube player:', err);
-      setError("Failed to initialize player");
+      console.error('Player setup error:', err);
+      setError("Player initialization failed");
       setIsLoading(false);
       isInitializingRef.current = false;
     }
   }, [isPlaying, onPlayerError, onPlayerReady, onPlayerStateChange]);
 
-  // --- YouTube API Loader ---
+  // YouTube API loader
   useEffect(() => {
     if (window.YT?.Player) {
       setApiLoaded(true);
       return;
     }
 
-    if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
+    const existingScript = document.querySelector('script[src="https://www.youtube.com/iframe_api"]');
+    if (!existingScript) {
       const tag = document.createElement('script');
       tag.src = 'https://www.youtube.com/iframe_api';
       tag.async = true;
       document.head.appendChild(tag);
 
-      window.onYouTubeIframeAPIReady = () => {
-        console.log('YouTube API Ready');
-        setApiLoaded(true);
-      };
+      window.onYouTubeIframeAPIReady = () => setApiLoaded(true);
     }
 
     return () => {
@@ -238,13 +196,12 @@ const NowPlayingBar = () => {
     };
   }, [destroyPlayer]);
 
-  // --- Track Change Handler ---
+  // Track change handler
   useEffect(() => {
     if (!apiLoaded) return;
 
     if (currentTrack?.id) {
       if (currentTrackIdRef.current !== currentTrack.id) {
-        console.log('New track detected, initializing player...');
         currentTrackIdRef.current = currentTrack.id;
         destroyPlayer();
         setupPlayer(currentTrack.id);
@@ -255,31 +212,13 @@ const NowPlayingBar = () => {
     }
   }, [currentTrack?.id, apiLoaded, destroyPlayer, setupPlayer]);
 
-  // --- Play/Pause Sync ---
+  // Play/pause sync
   useEffect(() => {
     if (!playerReady || !playerRef.current || isInitializingRef.current) return;
-    
-    try {
-      if (isPlaying) {
-        playerRef.current.playVideo();
-      } else {
-        playerRef.current.pauseVideo();
-      }
-    } catch (err) {
-      console.error('Error controlling playback:', err);
-    }
+    isPlaying ? playerRef.current.playVideo() : playerRef.current.pauseVideo();
   }, [isPlaying, playerReady]);
 
-  // --- Progress Bar Update ---
-  useEffect(() => {
-    const seekSlider = document.querySelector('.seek-slider');
-    if (seekSlider && duration > 0) {
-      const progressPercentage = (currentTime / duration) * 100;
-      seekSlider.style.setProperty('--progress', `${progressPercentage}%`);
-    }
-  }, [currentTime, duration]);
-
-  // --- UI Handlers ---
+  // UI handlers
   const handleSeek = useCallback((e) => {
     const newTime = parseFloat(e.target.value);
     if (playerReady && playerRef.current && !isNaN(newTime)) {
@@ -290,11 +229,9 @@ const NowPlayingBar = () => {
 
   const toggleMute = useCallback(() => {
     if (!playerReady || !playerRef.current) return;
-    
     setIsMuted(prev => {
       const newMuted = !prev;
-      if (newMuted) playerRef.current.mute();
-      else playerRef.current.unMute();
+      newMuted ? playerRef.current.mute() : playerRef.current.unMute();
       return newMuted;
     });
   }, [playerReady]);
@@ -314,87 +251,104 @@ const NowPlayingBar = () => {
   if (!currentTrack) return null;
 
   return (
-    <div className="now-playing-bar">
-      <div ref={playerContainerRef} style={{ position: 'absolute', top: -9999, left: -9999 }}></div>
+    <div className="nowPlayingBar">
+      <div ref={playerContainerRef} className="nowPlayingBar__hiddenPlayer" />
 
       {error && (
-        <div className="error-message">
+        <div className="nowPlayingBar__error">
           {error}
         </div>
       )}
 
-      <div className="track-info">
+      <div className="nowPlayingBar__trackInfo">
         <img
-          src={currentTrack.image || '/placeholder-image.png'}
+          src={currentTrack.image || '/placeholder-music.png'}
           alt={currentTrack.title || 'Track'}
-          className="track-thumbnail"
-          onError={(e) => {
-            e.target.src = '/placeholder-image.png';
-          }}
+          className="nowPlayingBar__thumbnail"
+          onError={(e) => e.target.src = '/placeholder-music.png'}
         />
-        <div className="track-details">
-          <div className="track-title">{currentTrack.title || 'Unknown Track'}</div>
-          <div className="track-artist">{currentTrack.artist || 'Unknown Artist'}</div>
+        <div className="nowPlayingBar__trackMeta">
+          <div className="nowPlayingBar__title">
+            {currentTrack.title || 'Unknown Track'}
+          </div>
+          <div className="nowPlayingBar__artist">
+            {currentTrack.artist || 'Unknown Artist'}
+          </div>
         </div>
       </div>
 
-      <div className="player-controls">
-        <div className="controls-main">
+      <div className="nowPlayingBar__playerControls">
+        <div className="nowPlayingBar__transportControls">
           <button 
             onClick={toggleShuffle} 
-            className={`shuffle-button ${shuffleMode ? 'active' : ''}`}
+            className={`nowPlayingBar__controlButton ${shuffleMode ? 'nowPlayingBar__controlButton--active' : ''}`}
             disabled={isLoading}
+            aria-label={shuffleMode ? 'Disable shuffle' : 'Enable shuffle'}
           >
             <Shuffle size={16} />
           </button>
           <button 
             onClick={playPreviousTrack} 
-            disabled={isLoading || !playlist || playlist.length === 0}
+            className="nowPlayingBar__controlButton"
+            disabled={isLoading || !playlist?.length}
+            aria-label="Previous track"
           >
             <SkipBack size={20} />
           </button>
           <button 
             onClick={togglePlayPause} 
             disabled={isLoading || !playerReady} 
-            className="play-pause-button"
+            className="nowPlayingBar__playButton"
+            aria-label={isPlaying ? 'Pause' : 'Play'}
           >
             {isPlaying ? <Pause size={28} /> : <Play size={28} />}
           </button>
           <button 
             onClick={playNextTrack} 
-            disabled={isLoading || !playlist || playlist.length === 0}
+            className="nowPlayingBar__controlButton"
+            disabled={isLoading || !playlist?.length}
+            aria-label="Next track"
           >
             <SkipForward size={20} />
           </button>
           <button 
             onClick={toggleRepeat} 
-            className={`repeat-button ${repeatMode !== 'off' ? 'active' : ''}`}
+            className={`nowPlayingBar__controlButton ${repeatMode !== 'off' ? 'nowPlayingBar__controlButton--active' : ''}`}
             disabled={isLoading}
+            aria-label={`Repeat ${repeatMode}`}
           >
             {repeatMode === 'one' ? <Repeat1 size={16} /> : <Repeat size={16} />}
           </button>
         </div>
-        <div className="time-control">
-          <span>{formatTime(currentTime)}</span>
+        <div className="nowPlayingBar__progressContainer">
+          <span className="nowPlayingBar__timeDisplay">
+            {formatTime(currentTime)}
+          </span>
           <input
             type="range"
             min="0"
-            max={duration || 0}
+            max={duration || 1}
             value={currentTime}
             onChange={handleSeek}
             disabled={!playerReady || isLoading}
-            className="seek-slider"
+            className="nowPlayingBar__progressBar"
+            aria-label="Track progress"
           />
-          <span>{formatTime(duration)}</span>
+          <span className="nowPlayingBar__timeDisplay">
+            {formatTime(duration)}
+          </span>
         </div>
       </div>
 
-      <div className="extras">
-        <div className="volume-control">
-          <button onClick={toggleMute} disabled={!playerReady}>
-            {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-          </button>
-        </div>
+      <div className="nowPlayingBar__utilityControls">
+        <button 
+          onClick={toggleMute} 
+          className="nowPlayingBar__volumeButton"
+          disabled={!playerReady}
+          aria-label={isMuted ? 'Unmute' : 'Mute'}
+        >
+          {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+        </button>
       </div>
     </div>
   );

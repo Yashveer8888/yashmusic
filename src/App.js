@@ -7,6 +7,7 @@ import NowPlayingBar from './components/NowPlayingBar';
 import Sidebar from './components/Sidebar';
 import Login from './components/Login';
 import CreatePlaylist from './components/CreatePlaylist';
+import UpdatePlaylistName from './components/UpdatePlaylistName';
 import Profile from './components/Profile';
 import ListOfPlaylist from './components/ListOfPlaylist';
 import PlaylistSongs from './components/PlaylistSong';
@@ -27,6 +28,7 @@ function App() {
                 <Route path="/search" element={<SearchPage />} />
                 <Route path="/library" element={<LibraryPage />} />
                 <Route path="/create-playlist" element={<CreatePlaylist />} />
+                <Route path="/update" element={<UpdatePlaylistName />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/playlists" element={<ListOfPlaylist />} />
                 <Route path="/playlist-songs" element={<PlaylistSongs />} />
