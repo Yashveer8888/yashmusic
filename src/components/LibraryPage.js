@@ -54,7 +54,7 @@ const LibraryPage = () => {
       }
       
       const response = await axios.get(
-        `${API_BASE_URL}/api/music/playlists/${encodeURIComponent(userEmail)}`
+        `${API_BASE_URL}/api/music/playlists/${userEmail}`
       );
 
       if (response.data.success) {

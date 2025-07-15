@@ -32,7 +32,7 @@ const ListOfPlaylist = () => {
       setError(null);
 
       const response = await axios.get(
-        `${API_BASE_URL}/api/music/playlists/${encodeURIComponent(user?.email)}`,
+        `${API_BASE_URL}/api/music/playlists/${user?.email}`,
         {
           timeout: 15000,
           headers: { 'Content-Type': 'application/json' }
