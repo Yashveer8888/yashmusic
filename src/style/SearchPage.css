@@ -3,27 +3,23 @@
 /* Base Styles */
 .search-page {
   max-width: 1400px;
-  margin: 0 auto;
   color: #f8f9fa;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: linear-gradient(to bottom, #0f0f13 0%, #08080a 100%);
-  min-height: 100vh;
-  padding: 1rem;
-  box-sizing: border-box;
+  padding: .5px;
+  margin: 1px;
 }
 
 /* Search Container */
 .search-container {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: .5rem;
   background: rgba(15, 15, 20, 0.93);
   border-radius: 24px;
-  padding: 1rem;
+  padding: 0.8rem;
   margin: 0.5rem 0;
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.36);
+  /* backdrop-filter: blur(12px); */
+  /* border: 1px solid rgba(255, 255, 255, 0.05); */
+  /* box-shadow: 0 8px 32px rgba(0, 0, 0, 0.36); */
 }
 
 /* Search Header */

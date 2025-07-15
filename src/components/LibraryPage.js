@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext, useCallback, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useContext, useCallback, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { 
@@ -19,7 +19,7 @@ import "../style/LibraryPage.css";
 
 const LibraryPage = () => {
   // Context and state
-  const { user, setPlaylistname, playlistname } = useContext(AuthContext);
+  const { user, setPlaylistname } = useContext(AuthContext);
   const [myPlaylists, setMyPlaylists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -30,7 +30,8 @@ const LibraryPage = () => {
   const navigate = useNavigate();
 
   // Constants
-  const API_BASE_URL = 'http://localhost:5000';
+  // const API_BASE_URL = 'http://localhost:5000';
+  const API_BASE_URL = 'https://yashmusic-backend.onrender.com';
   const DEFAULT_PLAYLIST_IMAGE = '/default-playlist-cover.jpg';
   const MAX_RETRY_ATTEMPTS = 3;
 
@@ -88,45 +89,6 @@ const LibraryPage = () => {
     navigate('/playlist-songs');
   }, [setPlaylistname, navigate]);
 
-  // Fixed: Handle rename playlist
-  const handleRenamePlaylist = useCallback((playlistName) => {
-    if (!playlistName || !setPlaylistname) return;
-    setPlaylistname(playlistName);
-    navigate('/update');
-  }, [setPlaylistname, navigate]);
-
-  // Fixed: Handle delete playlist
-  const handleDeletePlaylist = useCallback(async (playlistName) => {
-    if (!playlistName) return;
-    
-    const confirmed = window.confirm(`Are you sure you want to delete "${playlistName}"?`);
-    if (!confirmed) return;
-
-    try {
-      const userEmail = user?.email || user?.uid;
-      const response = await axios.delete(
-        `${API_BASE_URL}/api/music/playlists/${encodeURIComponent(userEmail)}/${encodeURIComponent(playlistName)}`
-      );
-
-      if (response.data.success) {
-        // Remove from local state
-        setMyPlaylists(prev => prev.filter(p => p.name !== playlistName));
-        // Clear context if this was the selected playlist
-        if (playlistname === playlistName) {
-          setPlaylistname('');
-        }
-      } else {
-        alert('Failed to delete playlist: ' + response.data.message);
-      }
-    } catch (error) {
-      console.error('Error deleting playlist:', error);
-      alert('Failed to delete playlist: ' + (error.response?.data?.message || error.message));
-    }
-  }, [user, playlistname, setPlaylistname]);
-
-  const handleImageError = (e) => {
-    e.target.src = DEFAULT_PLAYLIST_IMAGE;
-  };
 
   // Filter and sort playlists
   const filteredAndSortedPlaylists = useMemo(() => {
@@ -154,65 +116,13 @@ const LibraryPage = () => {
     if (user) fetchPlaylists();
   }, [user, fetchPlaylists]);
 
-  // Fixed: Component sub-sections
-  const PlaylistActionsMenu = ({ playlistName }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const menuRef = useRef(null);
-
-    useEffect(() => {
-      const handleClickOutside = (event) => {
-        if (menuRef.current && !menuRef.current.contains(event.target)) {
-          setIsOpen(false);
-        }
-      };
-
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    const handleRenameClick = (e) => {
+  const handelupdateplaylist = (playlistname) => {
+    console.log(playlistname)
+    return (e) => {
       e.stopPropagation();
-      setIsOpen(false);
-      handleRenamePlaylist(playlistName);
+      setPlaylistname(playlistname);
+      navigate("/updateplaylist");
     };
-
-    const handleDeleteClick = (e) => {
-      e.stopPropagation();
-      setIsOpen(false);
-      handleDeletePlaylist(playlistName);
-    };
-
-    return (
-      <div className="playlist-actions-container" ref={menuRef}>
-        <button 
-          className="item-more"
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsOpen(!isOpen);
-          }}
-          aria-label="Playlist actions"
-        >
-          <MoreHorizontal size={18} />
-        </button>
-
-        {isOpen && (
-          <div className="playlist-actions-menu">
-            <button 
-              className="action-item"
-              onClick={handleRenameClick}
-            >
-              Rename
-            </button>
-            <button 
-              className="action-item danger"
-              onClick={handleDeleteClick}
-            >
-              Delete
-            </button>
-          </div>
-        )}
-      </div>
-    );
   };
 
   const GridView = () => (
@@ -230,7 +140,6 @@ const LibraryPage = () => {
             <img
               src={playlist.image}
               alt={`${playlist.name} cover`}
-              onError={handleImageError}
               loading="lazy"
             />
             <button 
@@ -248,7 +157,9 @@ const LibraryPage = () => {
             <h3>{playlist.name}</h3>
             <p>{playlist.songCount} {playlist.songCount === 1 ? 'song' : 'songs'}</p>
           </div>
-          <PlaylistActionsMenu playlistName={playlist.name} />
+          <button onClick={handelupdateplaylist(playlist.name)}>
+            <MoreHorizontal size={20}/>
+          </button>
         </div>
       ))}
     </div>
@@ -282,7 +193,6 @@ const LibraryPage = () => {
             <img
               src={playlist.image}
               alt={`${playlist.name} cover`}
-              onError={handleImageError}
               loading="lazy"
             />
             <span>{playlist.name}</span>
@@ -293,7 +203,9 @@ const LibraryPage = () => {
             onClick={() => handlePlaylistClick(playlist.name)}>
             {playlist.updatedAt ? new Date(playlist.updatedAt).toLocaleDateString() : '--'}
           </div>
-          <PlaylistActionsMenu playlistName={playlist.name} />
+          <button onClick={handelupdateplaylist(playlist.name)}>
+            <MoreHorizontal size={20}/>
+          </button>
         </div>
       ))}
     </div>

@@ -4,14 +4,13 @@
   background-color: #121212;
   color: #ffffff;
   min-height: 100vh;
-  padding: 24px;
+  padding: 20px;
   font-family: 'Helvetica Neue', sans-serif;
 }
 
 .playlist-header {
   display: flex;
   flex-direction: column;
-  gap: 24px;
   margin-bottom: 24px;
 }
 
@@ -92,27 +91,75 @@
 
 .playlist-actions {
   display: flex;
-  gap: 12px;
-  margin-top: 16px;
+  gap: 24px;
+  margin-top: 24px;
 }
 
-.playlist-actions button {
+.play-button {
   background-color: #1db954;
-  color: #ffffff;
-  padding: 10px 20px;
+  color: white;
   border: none;
-  border-radius: 500px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
+  border-radius: 500px; /* Spotify's pill shape */
+  padding: 12px 48px;
+  font-weight: bold;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: background-color 0.2s;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 130px; /* Minimum width to prevent awkward small sizes */
 }
 
-.playlist-actions button:hover {
+.play-button:hover {
   background-color: #1ed760;
+  transform: scale(1.05);
+}
+
+.play-button:active {
+  transform: scale(1);
+}
+
+.play-button:disabled {
+  background-color: #535353;
+  color: #b3b3b3;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.play-button svg {
+  fill: currentColor;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .playlist-actions {
+    gap: 16px;
+    margin-top: 16px;
+  }
+  
+  .play-button {
+    padding: 10px 32px;
+    font-size: 12px;
+    min-width: 110px;
+  }
+}
+
+@media (max-width: 480px) {
+  .play-button {
+    padding: 8px 24px;
+    min-width: auto;
+  }
+  
+  .play-button span {
+    display: none; /* Hide "Play" text on very small screens */
+  }
+  
+  .play-button svg {
+    margin-right: 0;
+  }
 }
 
 .song-list {
@@ -143,21 +190,43 @@
   margin-right: 16px;
   object-fit: cover;
 }
-
 .song-info {
-  flex: 1;
+  min-width: 0; 
+  width: 100%;  
+  overflow: hidden;
 }
 
 .song-info h4 {
   font-size: 1rem;
   font-weight: 500;
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  color: inherit; 
+}
+
+.song-info h4.active {
+  color: #1db954; 
 }
 
 .song-info p {
-  font-size: 0.85rem;
+  margin: 4px 0 0;
+  font-size: 0.875rem;
   color: #b3b3b3;
-  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+.song-item {
+  grid-template-columns: [index] 16px [first] 50px [var1] 4fr [var2] 2fr [last] 1fr;
+}
+
+.song-info {
+  grid-column: var1 / var2; 
 }
 
 .song-actions {
@@ -183,30 +252,3 @@
   color: #ffffff;
 }
 
-.dropdown-menu {
-  position: absolute;
-  top: 28px;
-  right: 0;
-  background-color: #282828;
-  border-radius: 4px;
-  overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-  z-index: 100;
-}
-
-.dropdown-menu button {
-  display: block;
-  width: 100%;
-  padding: 10px 16px;
-  background: none;
-  border: none;
-  color: #ffffff;
-  text-align: left;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.dropdown-menu button:hover {
-  background-color: #3e3e3e;
-}

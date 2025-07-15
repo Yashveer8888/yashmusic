@@ -82,7 +82,7 @@ const PlaylistSong = () => {
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 
         const response = await axios.get(
-          `http://localhost:5000/api/music/playlist/${user?.email}/${playlistname}`,
+          `https://yashmusic-backend.onrender.com/api/music/playlist/${user?.email}/${playlistname}`,
           {
             signal: controller.signal,
             headers: {
@@ -193,7 +193,7 @@ const PlaylistSong = () => {
         <div className="loading-spinner">
           <RefreshCw className="spinner-icon" size={32} />
         </div>
-        <p>Loading your playlist...</p>
+        <p>Loading your songs...</p>
       </div>
     );
   }
@@ -243,9 +243,6 @@ const PlaylistSong = () => {
           <div className="playlist-info">
             <span className="playlist-type">Playlist</span>
             <h1>{playlistInfo?.name || 'Untitled Playlist'}</h1>
-            {playlistInfo?.description && (
-              <p className="playlist-description">{playlistInfo.description}</p>
-            )}
             <div className="playlist-meta">
               <span>{playlistInfo?.usermail || 'Unknown user'}</span> •{' '}
               <span>{songs.length} {songs.length === 1 ? 'song' : 'songs'}</span> •{' '}

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useContext, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Plus, Music, User, Play, RefreshCw, Clock } from 'lucide-react';
+import { Plus, Music, User, RefreshCw } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import '../style/ListofPlaylist.css';
 
@@ -14,8 +14,8 @@ const ListOfPlaylist = () => {
   const navigate = useNavigate();
 
   // Configuration
-  const API_BASE_URL = 'http://localhost:5000';
-  // const API_BASE_URL = 'https://yashmusic-backend.onrender.com';
+  // const API_BASE_URL = 'http://localhost:5000';
+  const API_BASE_URL = 'https://yashmusic-backend.onrender.com';
   const DEFAULT_PLAYLIST_IMAGE = '/default-playlist-cover.jpg';
 
   // Authentication check
@@ -116,7 +116,7 @@ const ListOfPlaylist = () => {
         <div className="playlist-list__header-index">#</div>
         <div className="playlist-list__header-title">TITLE</div>
         <div className="playlist-list__header-count">
-          <Clock size={16} />
+          <Music size={16} />
         </div>
       </div>
       
@@ -144,13 +144,8 @@ const ListOfPlaylist = () => {
               <div className="playlist-list__item-type">Playlist</div>
             </div>
           </div>
-          <div className="playlist-list__item-count">
-            {playlist.songCount} {playlist.songCount === 1 ? 'song' : 'songs'}
-          </div>
           <div className="playlist-list__item-duration">
-            <button className="playlist-list__play-button" aria-label="Play playlist">
-              <Play size={18} fill="currentColor" />
-            </button>
+            {playlist.songCount} {playlist.songCount === 1 ? 'song' : 'songs'}
           </div>
         </div>
       ))}

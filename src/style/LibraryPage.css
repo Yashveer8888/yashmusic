@@ -107,31 +107,39 @@
   cursor: pointer;
 }
 
+/* Playlist Grid Container */
 .playlist-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  /* gap: 1.5rem; */
-  margin-top: 1rem;
+  gap: 24px;
+  padding: 20px;
+  width: 100%;
 }
 
+/* Playlist Card */
 .playlist-card {
-  background: rgba(30, 30, 40, 0.6);
+  background: #181818;
   border-radius: 8px;
-  /* padding: 1rem; */
-  transition: all 0.2s ease;
-  position: relative;
+  padding: 16px;
+  transition: all 0.3s ease;
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
 }
 
 .playlist-card:hover {
-  background: rgba(40, 40, 50, 0.8);
-  transform: translateY(-3px);
+  background: #282828;
+  transform: translateY(-5px);
 }
 
+/* Card Image Container */
 .card-image-container {
   position: relative;
-  overflow: hidden;
+  margin-bottom: 16px;
   aspect-ratio: 1/1;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
 .card-image-container img {
@@ -145,23 +153,32 @@
   transform: scale(1.05);
 }
 
+/* Play Button */
 .play-button {
   position: absolute;
-  bottom: 10px;
-  right: 10px;
-  width: 40px;
-  height: 40px;
+  bottom: 8px;
+  right: 8px;
+  background: #1db954;
+  border: none;
   border-radius: 50%;
-  background: rgba(29, 185, 84, 0.8);
-  color: white;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
   transform: translateY(10px);
   transition: all 0.3s ease;
-  border: none;
   cursor: pointer;
+}
+
+.play-button:hover {
+  transform: scale(1.05) translateY(0);
+  background: #1ed760;
+}
+
+.play-button svg {
+  color: #000;
 }
 
 .playlist-card:hover .play-button {
@@ -169,18 +186,49 @@
   transform: translateY(0);
 }
 
+/* Card Info */
+.card-info {
+  min-height: 62px;
+}
+
 .card-info h3 {
-  margin: 0 0 0.25rem 0;
-  font-size: 1rem;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 4px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .card-info p {
+  font-size: 14px;
+  color: #b3b3b3;
   margin: 0;
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.6);
+}
+
+/* More Options Icon */
+.playlist-card > svg {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  color: #b3b3b3;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.playlist-card:hover > svg {
+  opacity: 1;
+}
+
+/* Accessibility Focus Styles */
+.playlist-card:focus {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.play-button:focus {
+  outline: 2px solid #fff;
 }
 
 .playlist-list-container {
@@ -350,6 +398,56 @@
   border-radius: 4px;
   color: white;
   cursor: pointer;
+}
+
+/* More Options Button Styles */
+.playlist-card > button,
+.playlist-list-item > button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(30, 30, 30, 0.7);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.2s ease;
+  color: white;
+  z-index: 2;
+}
+
+.playlist-card:hover > button,
+.playlist-list-item:hover > button {
+  opacity: 1;
+}
+
+.playlist-card > button:hover,
+.playlist-list-item > button:hover {
+  background: rgba(50, 50, 50, 0.9);
+  transform: scale(1.1);
+}
+
+/* Specific positioning for grid vs list */
+.playlist-card > button {
+  top: 8px;
+  right: 8px;
+}
+
+.playlist-list-item > button {
+  position: static; /* For list view, we want it visible all the time */
+  opacity: 1;
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.playlist-list-item > button:hover {
+  background: var(--hover-bg);
+  color: var(--text-color);
 }
 
 .no-results button:hover {
