@@ -1,51 +1,59 @@
-/* SearchPage.css */
+/* SearchPage.css - Refined Version */
 
-/* Base Styles with Elegant Dark Theme */
+/* Base Styles */
 .search-page {
-  padding: 0.55rem; /* Increased by 10% */
+  max-width: 1400px;
   margin: 0 auto;
   color: #f8f9fa;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   background: linear-gradient(to bottom, #0f0f13 0%, #08080a 100%);
   min-height: 100vh;
+  padding: 1rem;
+  box-sizing: border-box;
 }
 
-/* Glassmorphism Effect for Containers */
+/* Search Container */
 .search-container {
   display: flex;
   flex-direction: column;
-  gap: 0.825rem; /* Increased by 10% */
-  background: rgba(15, 15, 20, 0.6);
+  gap: 1rem;
+  background: rgba(15, 15, 20, 0.93);
+  border-radius: 24px;
+  padding: 1rem;
+  margin: 0.5rem 0;
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.36);
 }
 
-/* Elegant Search Header */
+/* Search Header */
 .search-header {
   display: flex;
   flex-direction: column;
-  gap: 0.825rem; /* Increased by 10% */
-  padding-bottom: 0.825rem; /* Increased by 10% */
+  gap: 0.75rem;
+  padding-bottom: 0.75rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .search-header h1 {
-  font-size: 2.2rem; /* Increased by 10% */
+  font-size: 2rem;
   margin: 0;
   font-weight: 700;
   background: linear-gradient(to right, #5df162, #2bdf4c);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  letter-spacing: -0.55px; /* Increased by 10% */
+  letter-spacing: -0.5px;
 }
 
+/* Search Input */
 .search-input-wrapper {
   position: relative;
   width: 100%;
-  max-width: 600px;
 }
 
 .search-input-wrapper svg {
   position: absolute;
-  left: 0.825rem; /* Increased by 10% */
+  left: 0.75rem;
   top: 50%;
   transform: translateY(-50%);
   color: rgba(255, 255, 255, 0.6);
@@ -54,64 +62,64 @@
 
 .search-input-wrapper input {
   width: 100%;
-  padding: 0.825rem 0.825rem 0.825rem 2.75rem; /* Increased by 10% */
-  border-radius: 8.8px; /* Increased by 10% */
+  padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+  border-radius: 8px;
   border: none;
   background: rgba(30, 30, 40, 0.8);
   color: #ffffff;
-  font-size: 0.99rem; /* Increased by 10% */
+  font-size: 0.9rem;
   outline: none;
   transition: all 0.3s ease;
-  box-shadow: 0 4.4px 22px rgba(0, 0, 0, 0.1); /* Increased by 10% */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
 .search-input-wrapper input:focus {
   background: rgba(40, 40, 50, 0.9);
-  box-shadow: 0 4.4px 22px rgba(0, 0, 0, 0.2); /* Increased by 10% */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .search-input-wrapper input:focus + svg {
   color: #1db954;
 }
 
-/* Track List - Modern Elegant Layout */
+/* Track List */
 .track-list {
   display: flex;
   flex-direction: column;
-  gap: 0.275rem; /* Increased by 10% */
+  gap: 0.25rem;
 }
 
 .track-item {
   display: grid;
-  grid-template-columns: 22px 55px minmax(165px, 3.3fr) minmax(110px, 1.1fr) auto auto; /* Increased by 10% */
+  grid-template-columns: 20px 50px minmax(150px, 3fr) minmax(100px, 1fr) auto auto;
   align-items: center;
-  gap: 1.1rem; /* Increased by 10% */
-  padding: 0.55rem 1.1rem; /* Increased by 10% */
-  border-radius: 8.8px; /* Increased by 10% */
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
   transition: all 0.3s ease;
   cursor: pointer;
 }
 
 .track-item:hover {
   background: rgba(255, 255, 255, 0.05);
-  transform: translateY(-1.1px); /* Increased by 10% */
+  transform: translateY(-1px);
 }
 
 .track-item.active {
   background: rgba(29, 185, 84, 0.1);
-  box-shadow: 0 4.4px 22px rgba(29, 185, 84, 0.1); /* Increased by 10% */
+  box-shadow: 0 4px 20px rgba(29, 185, 84, 0.1);
 }
 
-/* Track Number with Animated Play Button */
+/* Track Number */
 .track-number {
   position: relative;
-  width: 22px; /* Increased by 10% */
-  height: 22px; /* Increased by 10% */
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: rgba(255, 255, 255, 0.6);
-  font-size: 0.825rem; /* Increased by 10% */
+  font-size: 0.75rem;
   font-weight: 500;
   transition: all 0.3s ease;
 }
@@ -138,14 +146,14 @@
   transform: scale(1);
 }
 
-/* Album Art with Subtle Shine */
+/* Album Art */
 .track-image-container {
-  width: 55px; /* Increased by 10% */
-  height: 55px; /* Increased by 10% */
-  border-radius: 6.6px; /* Increased by 10% */
+  width: 50px;
+  height: 50px;
+  border-radius: 6px;
   overflow: hidden;
   position: relative;
-  box-shadow: 0 4.4px 22px rgba(0, 0, 0, 0.3); /* Increased by 10% */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .track-image-container::after {
@@ -169,31 +177,30 @@
   transform: scale(1.03);
 }
 
-/* Track Info with Elegant Typography */
+/* Track Info */
 .track-info {
   display: flex;
   flex-direction: column;
-  gap: 0.11rem; /* Increased by 10% */
+  gap: 0.1rem;
   overflow: hidden;
   min-width: 0;
 }
 
 .track-info h3 {
   margin: 0;
-  font-size: 0.99rem; /* Increased by 10% */
+  font-size: 0.9rem;
   font-weight: 600;
   color: #ffffff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  width: 100%;
 }
 
 .artist-views {
   display: flex;
   align-items: center;
-  gap: 0.275rem; /* Increased by 10% */
-  font-size: 0.88rem; /* Increased by 10% */
+  gap: 0.25rem;
+  font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.6);
 }
 
@@ -205,17 +212,17 @@
 }
 
 .artist-views span {
-  font-size: 0.77rem; /* Increased by 10% */
+  font-size: 0.7rem;
   color: rgba(255, 255, 255, 0.4);
   white-space: nowrap;
 }
 
-/* Duration with Fade Effect */
+/* Duration */
 .track-duration {
   color: rgba(255, 255, 255, 0.6);
-  font-size: 0.88rem; /* Increased by 10% */
+  font-size: 0.8rem;
   font-weight: 400;
-  letter-spacing: 0.55px; /* Increased by 10% */
+  letter-spacing: 0.5px;
 }
 
 /* Add to Playlist Button */
@@ -225,8 +232,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30.8px; /* Increased by 10% */
-  height: 30.8px; /* Increased by 10% */
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
 }
 
@@ -236,15 +243,16 @@
   transform: scale(1.1);
 }
 
-/* Browse Section - Modern Card Layout */
+/* Browse Section */
 .browse-section {
   display: flex;
   flex-direction: column;
-  gap: 1.1rem; /* Increased by 10% */
+  gap: 1rem;
+  margin-top: 1.5rem;
 }
 
 .browse-section h2 {
-  font-size: 1.375rem; /* Increased by 10% */
+  font-size: 1.25rem;
   margin: 0;
   font-weight: 700;
   color: #ffffff;
@@ -252,24 +260,24 @@
 
 .genre-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(198px, 1.1fr)); /* Increased by 10% */
-  gap: 1.1rem; /* Increased by 10% */
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
 }
 
 .genre-card {
   position: relative;
-  height: 110px; /* Increased by 10% */
-  border-radius: 8.8px; /* Increased by 10% */
-  padding: 1.1rem; /* Increased by 10% */
+  height: 100px;
+  border-radius: 8px;
+  padding: 1rem;
   overflow: hidden;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 8.8px 26.4px rgba(0, 0, 0, 0.2); /* Increased by 10% */
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
 .genre-card:hover {
-  transform: translateY(-2.2px); /* Increased by 10% */
-  box-shadow: 0 13.2px 30.8px rgba(0, 0, 0, 0.3); /* Increased by 10% */
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
 }
 
 .genre-card::before {
@@ -284,7 +292,7 @@
 
 .genre-card h3 {
   margin: 0;
-  font-size: 1.1rem; /* Increased by 10% */
+  font-size: 1rem;
   font-weight: 700;
   position: relative;
   z-index: 1;
@@ -293,9 +301,9 @@
 
 .genre-emoji {
   position: absolute;
-  right: 1.1rem; /* Increased by 10% */
-  bottom: 1.1rem; /* Increased by 10% */
-  font-size: 1.65rem; /* Increased by 10% */
+  right: 1rem;
+  bottom: 1rem;
+  font-size: 1.5rem;
   transform: rotate(25deg);
   z-index: 1;
   opacity: 0.8;
@@ -307,15 +315,16 @@
   opacity: 1;
 }
 
-/* Popular Searches Section */
+/* Popular Searches */
 .popular-section {
   display: flex;
   flex-direction: column;
-  gap: 1.1rem; /* Increased by 10% */
+  gap: 1rem;
+  margin-top: 1.5rem;
 }
 
 .popular-section h2 {
-  font-size: 1.375rem; /* Increased by 10% */
+  font-size: 1.25rem;
   margin: 0;
   font-weight: 700;
   color: #ffffff;
@@ -324,83 +333,83 @@
 .popular-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.55rem; /* Increased by 10% */
+  gap: 0.5rem;
 }
 
 .popular-list button {
   background: rgba(255, 255, 255, 0.08);
   border: none;
-  border-radius: 55px; /* Increased by 10% */
+  border-radius: 50px;
   color: #ffffff;
-  padding: 0.55rem 1.1rem; /* Increased by 10% */
-  font-size: 0.88rem; /* Increased by 10% */
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
-  backdrop-filter: blur(4.4px); /* Increased by 10% */
+  backdrop-filter: blur(4px);
 }
 
 .popular-list button:hover {
   background: rgba(255, 255, 255, 0.15);
-  transform: translateY(-1.1px); /* Increased by 10% */
+  transform: translateY(-1px);
 }
 
-/* Loading Spinner - Modern Design */
+/* Loading Spinner */
 .loading-spinner {
-  width: 44px; /* Increased by 10% */
-  height: 44px; /* Increased by 10% */
-  border: 2.2px solid rgba(255, 255, 255, 0.1); /* Increased by 10% */
+  width: 40px;
+  height: 40px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
   border-radius: 50%;
   border-top-color: #1db954;
   animation: spin 1s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-  margin: 1.65rem auto; /* Increased by 10% */
+  margin: 1.5rem auto;
 }
 
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
-/* Error Message - Elegant Design */
+/* Error Message */
 .error-message {
   color: #ff6b6b;
-  padding: 0.825rem; /* Increased by 10% */
+  padding: 0.75rem;
   background: rgba(255, 107, 107, 0.1);
-  border-radius: 6.6px; /* Increased by 10% */
-  border-left: 2.2px solid #ff6b6b; /* Increased by 10% */
+  border-radius: 6px;
+  border-left: 2px solid #ff6b6b;
   font-weight: 500;
-  font-size: 0.99rem; /* Increased by 10% */
+  font-size: 0.9rem;
 }
 
-/* No Results Section */
+/* No Results */
 .no-results {
   display: flex;
   flex-direction: column;
-  gap: 1.1rem; /* Increased by 10% */
+  gap: 1rem;
   align-items: center;
   text-align: center;
-  padding: 1.65rem 0; /* Increased by 10% */
+  padding: 1.5rem 0;
 }
 
 .no-results p {
   margin: 0;
   color: rgba(255, 255, 255, 0.6);
-  font-size: 0.99rem; /* Increased by 10% */
+  font-size: 0.9rem;
 }
 
 .suggestions {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 0.55rem; /* Increased by 10% */
+  gap: 0.5rem;
 }
 
 .suggestions button {
   background: rgba(255, 255, 255, 0.08);
   border: none;
-  border-radius: 55px; /* Increased by 10% */
+  border-radius: 50px;
   color: #ffffff;
-  padding: 0.55rem 1.1rem; /* Increased by 10% */
-  font-size: 0.88rem; /* Increased by 10% */
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -408,18 +417,14 @@
 
 .suggestions button:hover {
   background: rgba(255, 255, 255, 0.15);
-  transform: translateY(-1.1px); /* Increased by 10% */
+  transform: translateY(-1px);
 }
 
 /* Responsive Adjustments */
 @media (max-width: 1024px) {
-  .search-page {
-    padding: 0.825rem; /* Increased by 10% */
-  }
-  
   .track-item {
-    grid-template-columns: 22px 55px minmax(132px, 2.2fr) auto; /* Increased by 10% */
-    gap: 0.825rem; /* Increased by 10% */
+    grid-template-columns: 20px 50px minmax(120px, 2fr) auto;
+    gap: 0.75rem;
   }
   
   .artist-views span {
@@ -429,12 +434,12 @@
 
 @media (max-width: 768px) {
   .search-header h1 {
-    font-size: 1.65rem; /* Increased by 10% */
+    font-size: 1.5rem;
   }
   
   .track-item {
-    grid-template-columns: 22px 44px minmax(110px, 1.1fr) auto; /* Increased by 10% */
-    padding: 0.55rem; /* Increased by 10% */
+    grid-template-columns: 20px 40px minmax(100px, 1fr) auto;
+    padding: 0.5rem;
   }
   
   .track-duration {
@@ -442,68 +447,68 @@
   }
   
   .genre-grid {
-    grid-template-columns: repeat(auto-fill, minmax(154px, 1.1fr)); /* Increased by 10% */
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   }
   
   .genre-card {
-    height: 99px; /* Increased by 10% */
-    padding: 0.825rem; /* Increased by 10% */
+    height: 90px;
+    padding: 0.75rem;
   }
   
   .genre-card h3 {
-    font-size: 0.99rem; /* Increased by 10% */
+    font-size: 0.9rem;
   }
   
   .genre-emoji {
-    font-size: 1.375rem; /* Increased by 10% */
+    font-size: 1.25rem;
   }
 }
 
 @media (max-width: 480px) {
   .search-page {
-    padding: 0.55rem; /* Increased by 10% */
+    padding: 0.5rem;
   }
   
   .search-container {
-    border-radius: 13.2px; /* Increased by 10% */
+    border-radius: 12px;
   }
   
   .search-header h1 {
-    font-size: 1.375rem; /* Increased by 10% */
+    font-size: 1.25rem;
   }
   
   .search-input-wrapper input {
-    padding: 0.66rem 0.66rem 0.66rem 2.475rem; /* Increased by 10% */
-    font-size: 0.88rem; /* Increased by 10% */
+    padding: 0.6rem 0.6rem 0.6rem 2.25rem;
+    font-size: 0.8rem;
   }
   
   .track-item {
-    grid-template-columns: 22px 38.5px minmax(88px, 1.1fr) auto; /* Increased by 10% */
-    gap: 0.55rem; /* Increased by 10% */
+    grid-template-columns: 20px 35px minmax(80px, 1fr) auto;
+    gap: 0.5rem;
   }
   
   .track-image-container {
-    width: 38.5px; /* Increased by 10% */
-    height: 38.5px; /* Increased by 10% */
-    border-radius: 4.4px; /* Increased by 10% */
+    width: 35px;
+    height: 35px;
+    border-radius: 4px;
   }
   
   .track-info h3 {
-    font-size: 0.88rem; /* Increased by 10% */
+    font-size: 0.8rem;
   }
   
   .artist-views {
-    font-size: 0.77rem; /* Increased by 10% */
+    font-size: 0.7rem;
   }
   
   .genre-grid {
-    grid-template-columns: 1.1fr 1.1fr; /* Increased by 10% */
-    gap: 0.825rem; /* Increased by 10% */
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
   }
   
   .popular-list button,
   .suggestions button {
-    padding: 0.44rem 0.88rem; /* Increased by 10% */
-    font-size: 0.77rem; /* Increased by 10% */
+    padding: 0.4rem 0.8rem;
+    font-size: 0.7rem;
   }
 }

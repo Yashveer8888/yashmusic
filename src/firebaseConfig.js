@@ -26,16 +26,16 @@ const auth = getAuth(app);
 // Google Auth Provider setup
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ 
-  prompt: "select_account",
-  ux_mode: "redirect" // Force redirect flow on mobile
+  prompt: "select_account"
 });
 
-// Sign in with Google (mobile-optimized)
+// Sign in with Google
 export const loginWithGoogle = async () => {
   try {
-    // Use redirect for mobile, falls back to popup
-    if (window.innerWidth <= 768) {
+    // Use redirect for mobile, popup for desktop
+    if (window.innerWidth <= 768 || window.navigator.userAgent.includes("Mobile")) {
       await signInWithRedirect(auth, googleProvider);
+      return null; // Redirect flow will be handled by handleRedirectResult
     } else {
       const result = await signInWithPopup(auth, googleProvider);
       return result.user;
@@ -50,10 +50,13 @@ export const loginWithGoogle = async () => {
 export const handleRedirectResult = async () => {
   try {
     const result = await getRedirectResult(auth);
-    return result?.user || null;
+    if (result) {
+      return result.user;
+    }
+    return null;
   } catch (error) {
     console.error("Redirect Error:", error);
-    return null;
+    throw error;
   }
 };
 
@@ -67,7 +70,8 @@ export const logout = async () => {
 };
 
 // Auth state listener
-export const onAuthStateChanged = (callback) => 
-  firebaseOnAuthStateChanged(auth, callback);
+export const onAuthStateChanged = (callback) => {
+  return firebaseOnAuthStateChanged(auth, callback);
+};
 
 export { auth };

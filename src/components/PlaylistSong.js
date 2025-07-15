@@ -304,11 +304,10 @@ const PlaylistSong = () => {
                 <h4 className={currentTrack?.id === song.id && isPlaying ? 'active' : ''}>
                   {song.title}
                 </h4>
-                <p>{song.artist}</p>
+                <p>{song.artist} | {formatDuration(song.duration)}</p>
               </div>
               
               <div className="song-actions">
-                <span className="song-duration">{formatDuration(song.duration)}</span>
                 <button 
                   onClick={(e) => toggleMenu(song.id, e)}
                   className="menu-button"
@@ -326,7 +325,7 @@ const PlaylistSong = () => {
                       top: `${menuPosition.y}px`
                     }}
                   >
-                    <button className="menu-item">Add to Queue</button>
+                    <button className="menu-item">Add to Playlist</button>
                     <button className="menu-item">Remove from Playlist</button>
                   </div>
                 )}

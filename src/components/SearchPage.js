@@ -178,20 +178,22 @@ const SearchPage = () => {
                   <div 
                     key={`${track.id}-${index}`}
                     className={`track-item ${currentTrack?.id === track.id ? 'active' : ''}`}
-                    onClick={() => playTrack(track, youtubeResults)}
                   >
-                    <div className="track-number">
+                    <div className="track-number"
+                      onClick={() => playTrack(track, youtubeResults)}>
                       <span>{index + 1}</span>
                       <div className="play-button-overlay">
                         {currentTrack?.id === track.id && isPlaying ? <Pause size={20} /> : <Play size={20} />}
                       </div>
                     </div>
                     
-                    <div className="track-image-container">
+                    <div className="track-image-container"
+                      onClick={() => playTrack(track, youtubeResults)}>
                       <img src={track.image} alt={track.title} loading="lazy" />
                     </div>
                     
-                    <div className="track-info">
+                    <div className="track-info"
+                      onClick={() => playTrack(track, youtubeResults)}>
                       <h3>{track.title}</h3>
                       <div className="artist-views">
                         <p>{track.artist} | {track.viewCount} views | {track.duration}</p>
@@ -199,9 +201,9 @@ const SearchPage = () => {
                     </div>
                     
                     <Link
-                      to="./playlists"
+                      to="/playlists"
                       className="add-to-playlist"
-                      onClick={handleAddToPlaylist(track)}
+                      onClick={(e) => handleAddToPlaylist(track)}
                     >
                       <PlusCircle size={16} />
                     </Link>
