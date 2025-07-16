@@ -11,31 +11,51 @@ const AddPlaylist = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // const API_BASE_URL = 'http://localhost:5000';
+  const API_BASE_URL = 'https://yashmusic-backend.onrender.com';
+
   const handleAddPlaylist = async () => {
     const trimmedName = playlistName.trim();
 
-    if (!user || !trimmedName) {
-      setError('Please provide a valid playlist name.');
+    // Frontend validation to match backend
+    if (!user?.email || !trimmedName) {
+      setError('Please provide a valid playlist name and ensure you are logged in.');
       setSuccess('');
       return;
     }
 
     try {
-      const response = await axios.post('https://yashmusic-backend.onrender.com/api/music/create-playlist', {
-        usermail: user?.email,
-        playlistName: trimmedName,
+      const response = await axios.post(`${API_BASE_URL}/api/music/create-playlist`, {
+        usermail: user.email.trim(), // Ensure email is trimmed like backend expects
+        playlistName: trimmedName,  // Already trimmed
       });
 
-      setSuccess(response.data.message);
-      setError('');
-      setPlaylistName('');
+      if (response.data.success) {
+        setSuccess(`Playlist "${trimmedName}" created successfully!`);
+        setError('');
+        setPlaylistName('');
 
-      setTimeout(() => {
-        navigate('/library');
-      }, 1000);
+        // Navigate after showing success message
+        setTimeout(() => {
+          navigate('/library');
+        }, 1500);
+      } else {
+        // Handle cases where backend returns success: false
+        setError(response.data.message || 'Playlist creation failed');
+        setSuccess('');
+      }
     } catch (err) {
-      setError(err.response?.data?.message || 'Something went wrong.');
+      // Enhanced error handling to match backend responses
+      const errorMessage = err.response?.data?.message || 
+                          err.message || 
+                          'Failed to create playlist';
+      setError(errorMessage);
       setSuccess('');
+      
+      // Special case for duplicate playlists
+      if (errorMessage.includes('already exists')) {
+        setPlaylistName(''); // Clear the input to encourage a new name
+      }
     }
   };
 

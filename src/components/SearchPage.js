@@ -4,7 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import "../style/SearchPage.css";
 
-const YOUTUBE_API_KEY = 'AIzaSyAgQ7Q4TwivG014awUMNokxMjsotxL54Qc';
+const YOUTUBE_API_KEY = 'AIzaSyA3GrLMJyDd-l81x1L4CIX1WHFkcTdTGUo';
 
 const SearchPage = () => {
   const { 

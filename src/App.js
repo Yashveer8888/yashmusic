@@ -12,6 +12,7 @@ import ListOfPlaylist from './components/ListOfPlaylist';
 import PlaylistSongs from './components/PlaylistSong';
 import DownloadPage from './components/DownloadPage';
 import UpdatePlaylist from './components/UpdatePlaylist';
+import UpdateSong from './components/UpdateSong';
 import './App.css'; // Import the CSS file
 
 function App() {
@@ -33,6 +34,7 @@ function App() {
                 <Route path="/playlist-songs" element={<PlaylistSongs />} />
                 <Route path="/download" element={<DownloadPage />} />
                 <Route path="/updateplaylist" element={<UpdatePlaylist />} />
+                <Route path="/updatesong" element={<UpdateSong />} />
               </Routes>
             </div>
           </div>

@@ -40,25 +40,37 @@ const LibraryPage = () => {
     if (!user) navigate("/login");
   }, [user, navigate]);
 
-  // Data fetching
+  // Data fetching with improved error handling
   const fetchPlaylists = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const userEmail = user?.email || user?.uid;
+      const userEmail = user?.email;
       if (!userEmail) {
         setError('User email not found');
         setLoading(false);
         return;
       }
+
+      console.log('Fetching playlists for user:', userEmail);
+      console.log('API URL:', `${API_BASE_URL}/api/music/playlists/${userEmail}`);
       
       const response = await axios.get(
-        `${API_BASE_URL}/api/music/playlists/${userEmail}`
+        `${API_BASE_URL}/api/music/playlists/${userEmail}`,
+        {
+          timeout: 10000, // 10 second timeout
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
       );
 
+      console.log('API Response:', response.data);
+
       if (response.data.success) {
-        setMyPlaylists(response.data.playlists.map(playlist => ({
+        const playlists = response.data.playlists || [];
+        setMyPlaylists(playlists.map(playlist => ({
           id: playlist._id,
           name: playlist.name,
           songCount: playlist.totalSongs || 0,
@@ -72,15 +84,34 @@ const LibraryPage = () => {
       }
     } catch (error) {
       console.error('Error fetching playlists:', error);
-      setError(error.response?.data?.message || error.message || 'Failed to fetch playlists');
-      if (retryCount < MAX_RETRY_ATTEMPTS) {
-        setTimeout(fetchPlaylists, 2000);
-        setRetryCount(prev => prev + 1);
+      
+      // More specific error handling
+      if (error.code === 'ECONNABORTED') {
+        setError('Request timeout. Please check your internet connection.');
+      } else if (error.response) {
+        // Server responded with error status
+        const status = error.response.status;
+        const message = error.response.data?.message || error.message;
+        setError(`Server Error (${status}): ${message}`);
+      } else if (error.request) {
+        // Request was made but no response received
+        setError('Please check your internet connection.');
+      } else {
+        // Something else happened
+        setError(`Request Error: ${error.message}`);
       }
     } finally {
       setLoading(false);
     }
-  }, [user, retryCount]);
+  }, [user?.email]);
+
+  // Retry logic separated from fetchPlaylists
+  const handleRetry = useCallback(() => {
+    if (retryCount < MAX_RETRY_ATTEMPTS) {
+      setRetryCount(prev => prev + 1);
+      setTimeout(fetchPlaylists, 2000);
+    }
+  }, [retryCount, fetchPlaylists]);
 
   // Playlist actions
   const handlePlaylistClick = useCallback((playlistName) => {
@@ -89,6 +120,24 @@ const LibraryPage = () => {
     navigate('/playlist-songs');
   }, [setPlaylistname, navigate]);
 
+  // Fixed date formatting function
+  const formatDate = (dateString) => {
+    if (!dateString) return '--';
+    try {
+      const date = new Date(dateString);
+      // Check if date is valid
+      if (isNaN(date.getTime())) return '--';
+      
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      return '--';
+    }
+  };
 
   // Filter and sort playlists
   const filteredAndSortedPlaylists = useMemo(() => {
@@ -104,26 +153,38 @@ const LibraryPage = () => {
       switch (sortBy) {
         case 'name': return a.name.localeCompare(b.name);
         case 'songCount': return b.songCount - a.songCount;
-        case 'createdAt': return new Date(b.createdAt) - new Date(a.createdAt);
-        case 'updatedAt': return new Date(b.updatedAt) - new Date(a.updatedAt);
+        case 'createdAt': {
+          const dateA = new Date(a.createdAt);
+          const dateB = new Date(b.createdAt);
+          return dateB - dateA;
+        }
+        case 'updatedAt': {
+          const dateA = new Date(a.updatedAt);
+          const dateB = new Date(b.updatedAt);
+          return dateB - dateA;
+        }
         default: return 0;
       }
     });
   }, [myPlaylists, searchTerm, sortBy]);
 
-  // Fetch data on mount and when user changes
+  // Fetch data on mount and when user changes - Fixed to run only once
   useEffect(() => {
-    if (user) fetchPlaylists();
-  }, [user, fetchPlaylists]);
+    if (user?.email) {
+      console.log('User found, fetching playlists...');
+      fetchPlaylists();
+    } else {
+      console.log('No user email found');
+    }
+  }, [user?.email, fetchPlaylists]);
 
-  const handelupdateplaylist = (playlistname) => {
-    console.log(playlistname)
+  const handelupdateplaylist = useCallback((playlistname) => {
     return (e) => {
       e.stopPropagation();
       setPlaylistname(playlistname);
       navigate("/updateplaylist");
     };
-  };
+  }, [setPlaylistname, navigate]);
 
   const GridView = () => (
     <div className="playlist-grid">
@@ -141,6 +202,9 @@ const LibraryPage = () => {
               src={playlist.image}
               alt={`${playlist.name} cover`}
               loading="lazy"
+              onError={(e) => {
+                e.target.src = DEFAULT_PLAYLIST_IMAGE;
+              }}
             />
             <button 
               className="play-button" 
@@ -194,6 +258,9 @@ const LibraryPage = () => {
               src={playlist.image}
               alt={`${playlist.name} cover`}
               loading="lazy"
+              onError={(e) => {
+                e.target.src = DEFAULT_PLAYLIST_IMAGE;
+              }}
             />
             <span>{playlist.name}</span>
           </div>
@@ -201,7 +268,7 @@ const LibraryPage = () => {
             onClick={() => handlePlaylistClick(playlist.name)}>{playlist.songCount}</div>
           <div className="item-updated"
             onClick={() => handlePlaylistClick(playlist.name)}>
-            {playlist.updatedAt ? new Date(playlist.updatedAt).toLocaleDateString() : '--'}
+            {formatDate(playlist.updatedAt)}
           </div>
           <button onClick={handelupdateplaylist(playlist.name)}>
             <MoreHorizontal size={20}/>
@@ -225,14 +292,11 @@ const LibraryPage = () => {
       <p>{error}</p>
       <div className="error-actions">
         <button 
-          onClick={fetchPlaylists} 
+          onClick={handleRetry} 
           disabled={retryCount >= MAX_RETRY_ATTEMPTS}
         >
           <RefreshCw size={18} />
           {retryCount >= MAX_RETRY_ATTEMPTS ? 'Max Retries' : 'Try Again'}
-        </button>
-        <button onClick={() => window.location.reload()}>
-          Refresh Page
         </button>
       </div>
     </div>

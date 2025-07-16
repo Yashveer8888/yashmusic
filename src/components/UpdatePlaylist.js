@@ -6,11 +6,15 @@ import '../style/UpdatePlaylist.css';
 
 const UpdatePlaylist = () => {
   const navigate = useNavigate();
-  const { user, playlistName } = useContext(AuthContext);
+  const { user, playlistname } = useContext(AuthContext);
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  console.log(playlistname)
+
+  // const API_BASE_URL = 'http://localhost:5000';
+  const API_BASE_URL = 'https://yashmusic-backend.onrender.com';
   
   useEffect(() => {
     if (!user) {
@@ -27,7 +31,7 @@ const UpdatePlaylist = () => {
       return;
     }
 
-    if (trimmedName === playlistName) {
+    if (trimmedName === playlistname) {
       setError('New playlist name must be different from current name.');
       return;
     }
@@ -37,9 +41,9 @@ const UpdatePlaylist = () => {
     setSuccess('');
 
     try {
-      const response = await axios.put('https://yashmusic-backend.onrender.com/api/music/update-playlist', {
+      const response = await axios.put(`${API_BASE_URL}/api/music/update-playlist`, {
         usermail: user.email,
-        oldPlaylistName: playlistName,
+        oldPlaylistName: playlistname,
         newPlaylistName: trimmedName,
       }, {
         headers: {
@@ -61,7 +65,7 @@ const UpdatePlaylist = () => {
   };
 
   const handleDeletePlaylist = async () => {
-    if (!window.confirm(`Are you sure you want to permanently delete "${playlistName}"?`)) {
+    if (!window.confirm(`Are you sure you want to permanently delete "${playlistname}"?`)) {
       return;
     }
 
@@ -70,10 +74,10 @@ const UpdatePlaylist = () => {
     setSuccess('');
 
     try {
-      const response = await axios.delete('https://yashmusic-backend.onrender.com/api/music/delete-playlist', {
+      const response = await axios.delete(`${API_BASE_URL}/api/music/delete-playlist`, {
         data: {
-          usermail: user.email,
-          playlistName: playlistName
+          usermail: user?.email,
+          playlistName: playlistname
         },
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -94,7 +98,7 @@ const UpdatePlaylist = () => {
 
   return (
     <div className="update-playlist-container">
-      <h2 className="update-playlist-title">Edit Playlist: {playlistName}</h2>
+      <h2 className="update-playlist-title">Edit Playlist: {playlistname}</h2>
       
       <form onSubmit={handleRenamePlaylist} className="update-playlist-form">
         <div className="update-playlist-input-group">
@@ -113,7 +117,7 @@ const UpdatePlaylist = () => {
           <button
             type="submit"
             className="update-playlist-button rename-button"
-            disabled={!newPlaylistName.trim() || isProcessing || newPlaylistName.trim() === playlistName}
+            disabled={!newPlaylistName.trim() || isProcessing || newPlaylistName.trim() === playlistname}
           >
             {isProcessing ? 'Processing...' : 'Rename'}
           </button>

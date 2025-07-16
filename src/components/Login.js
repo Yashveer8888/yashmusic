@@ -27,8 +27,10 @@ const Login = () => {
     try {
       setIsLoading(true);
       const userCred = await loginWithGoogle();
+      console.log(userCred)
       setUser(userCred);
       navigate("/home");
+
     } catch (error) {
       console.error("Login Error:", error);
       

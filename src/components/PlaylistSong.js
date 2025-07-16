@@ -18,7 +18,8 @@ const PlaylistSong = () => {
     isPlaying,
     currentTrack,
     setPlaylist,
-    playTrack
+    playTrack,
+    setSong
   } = useContext(AuthContext);
 
   const navigate = useNavigate();
@@ -27,8 +28,9 @@ const PlaylistSong = () => {
   const [playlistInfo, setPlaylistInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [openMenuId, setOpenMenuId] = useState(null);
-  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
+
+  // const API_BASE_URL = 'http://localhost:5000';
+  const API_BASE_URL = 'https://yashmusic-backend.onrender.com';
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -82,7 +84,7 @@ const PlaylistSong = () => {
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 
         const response = await axios.get(
-          `https://yashmusic-backend.onrender.com/api/music/playlist/${user?.email}/${playlistname}`,
+          `${API_BASE_URL}/api/music/playlist/${user?.email}/${playlistname}`,
           {
             signal: controller.signal,
             headers: {
@@ -162,29 +164,15 @@ const PlaylistSong = () => {
     window.location.reload();
   }, []);
 
-  const toggleMenu = useCallback((songId, e) => {
-    e.stopPropagation();
-    setMenuPosition({ x: e.clientX, y: e.clientY });
-    setOpenMenuId(openMenuId === songId ? null : songId);
-  }, [openMenuId]);
+  const handelupdatesong = useCallback((song) => {
+      return (e) => {
+        e.stopPropagation();
+        setSong(song);
+        navigate("/updatesong");
+      };
+    }, [navigate,setSong]);
 
-  const closeMenu = useCallback(() => {
-    setOpenMenuId(null);
-  }, []);
 
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = () => {
-      if (openMenuId) {
-        closeMenu();
-      }
-    };
-
-    document.addEventListener('click', handleClickOutside);
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, [openMenuId, closeMenu]);
 
   // Loading state
   if (loading) {
@@ -306,26 +294,12 @@ const PlaylistSong = () => {
               
               <div className="song-actions">
                 <button 
-                  onClick={(e) => toggleMenu(song.id, e)}
+                  onClick={handelupdatesong(song)}
                   className="menu-button"
                   aria-label="Song options"
                 >
                   <MoreHorizontal size={20} />
                 </button>
-                
-                {openMenuId === song.id && (
-                  <div 
-                    className="dropdown-menu"
-                    style={{
-                      position: 'fixed',
-                      left: `${menuPosition.x}px`,
-                      top: `${menuPosition.y}px`
-                    }}
-                  >
-                    <button className="menu-item">Add to Playlist</button>
-                    <button className="menu-item">Remove from Playlist</button>
-                  </div>
-                )}
               </div>
             </div>
           ))

@@ -1,0 +1,113 @@
+.update-song-container {
+  max-width: 500px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: #181818;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  color: #fff;
+  font-family: 'Circular', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.update-song-title {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #1db954;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.song-info {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.song-info h3 {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+  color: #fff;
+}
+
+.song-info p {
+  color: #b3b3b3;
+  font-size: 0.9rem;
+}
+
+.update-song-actions {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.action-button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.action-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.add-button {
+  background-color: #1db954;
+  color: #000;
+}
+
+.add-button:hover:not(:disabled) {
+  background-color: #1ed760;
+  transform: translateY(-2px);
+}
+
+.delete-button {
+  background-color: #e22134;
+  color: #fff;
+}
+
+.delete-button:hover:not(:disabled) {
+  background-color: #ff3333;
+  transform: translateY(-2px);
+}
+
+.error-message {
+  color: #e22134;
+  text-align: center;
+  margin-top: 1rem;
+  padding: 0.5rem;
+  background-color: rgba(226, 33, 52, 0.1);
+  border-radius: 4px;
+}
+
+.success-message {
+  color: #1db954;
+  text-align: center;
+  margin-top: 1rem;
+  padding: 0.5rem;
+  background-color: rgba(29, 185, 84, 0.1);
+  border-radius: 4px;
+}
+
+@media (max-width: 600px) {
+  .update-song-container {
+    margin: 1rem;
+    padding: 1.5rem;
+  }
+  
+  .update-song-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .action-button {
+    width: 100%;
+  }
+}
