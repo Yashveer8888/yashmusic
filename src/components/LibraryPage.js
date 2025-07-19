@@ -32,8 +32,8 @@ const LibraryPage = () => {
   const navigate = useNavigate();
 
   // Constants
-  const API_BASE_URL = 'http://localhost:5000';
-  // const API_BASE_URL = 'https://yashmusic-backend.onrender.com';
+  // const API_BASE_URL = 'http://localhost:5000';
+  const API_BASE_URL = 'https://yashmusic-backend.onrender.com';
   const DEFAULT_PLAYLIST_IMAGE = dimg;
   const MAX_RETRY_ATTEMPTS = 3;
 
