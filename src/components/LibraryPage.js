@@ -12,10 +12,11 @@ import {
   RefreshCw, 
   Search, 
   Filter,
-  Clock
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import "../style/LibraryPage.css";
+import likeimg from '../image/liked-songs.jpg'
+import dimg from '../image/dimg.jpg'
 
 const LibraryPage = () => {
   // Context and state
@@ -27,12 +28,13 @@ const LibraryPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('name');
   const [retryCount, setRetryCount] = useState(0);
+  const [likedSongs, setlikedSongs] = useState(0);
   const navigate = useNavigate();
 
   // Constants
-  // const API_BASE_URL = 'http://localhost:5000';
-  const API_BASE_URL = 'https://yashmusic-backend.onrender.com';
-  const DEFAULT_PLAYLIST_IMAGE = '/default-playlist-cover.jpg';
+  const API_BASE_URL = 'http://localhost:5000';
+  // const API_BASE_URL = 'https://yashmusic-backend.onrender.com';
+  const DEFAULT_PLAYLIST_IMAGE = dimg;
   const MAX_RETRY_ATTEMPTS = 3;
 
   // Redirect if not authenticated
@@ -53,20 +55,21 @@ const LibraryPage = () => {
         return;
       }
 
-      console.log('Fetching playlists for user:', userEmail);
-      console.log('API URL:', `${API_BASE_URL}/api/music/playlists/${userEmail}`);
       
       const response = await axios.get(
         `${API_BASE_URL}/api/music/playlists/${userEmail}`,
         {
-          timeout: 10000, // 10 second timeout
           headers: {
             'Content-Type': 'application/json',
           },
         }
       );
 
-      console.log('API Response:', response.data);
+      const likedPlaylist = response.data.playlists.find(playlist => playlist.name === "Liked Songs");
+      if (likedPlaylist) {
+        setlikedSongs(likedPlaylist.totalSongs);
+      }
+
 
       if (response.data.success) {
         const playlists = response.data.playlists || [];
@@ -103,7 +106,7 @@ const LibraryPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [user?.email]);
+  }, [user?.email, DEFAULT_PLAYLIST_IMAGE]);
 
   // Retry logic separated from fetchPlaylists
   const handleRetry = useCallback(() => {
@@ -119,25 +122,6 @@ const LibraryPage = () => {
     setPlaylistname(playlistName);
     navigate('/playlist-songs');
   }, [setPlaylistname, navigate]);
-
-  // Fixed date formatting function
-  const formatDate = (dateString) => {
-    if (!dateString) return '--';
-    try {
-      const date = new Date(dateString);
-      // Check if date is valid
-      if (isNaN(date.getTime())) return '--';
-      
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
-    } catch (error) {
-      console.error('Date formatting error:', error);
-      return '--';
-    }
-  };
 
   // Filter and sort playlists
   const filteredAndSortedPlaylists = useMemo(() => {
@@ -178,18 +162,49 @@ const LibraryPage = () => {
     }
   }, [user?.email, fetchPlaylists]);
 
-  const handelupdateplaylist = useCallback((playlistname) => {
+  const handleUpdatePlaylist = useCallback((playlistName) => {
     return (e) => {
       e.stopPropagation();
-      setPlaylistname(playlistname);
+      setPlaylistname(playlistName);
       navigate("/updateplaylist");
     };
   }, [setPlaylistname, navigate]);
-
   const GridView = () => (
     <div className="playlist-grid">
+      <div 
+        className="playlist-card"
+        onClick={() => handlePlaylistClick('Liked Songs')}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === 'Enter' && handlePlaylistClick('Liked Songs')}
+      >
+        <div className="card-image-container">
+          <img
+            src={likeimg}
+            alt={`${'Liked Songs'} cover`}
+            loading="lazy"
+            onError={(e) => {
+              e.target.src = DEFAULT_PLAYLIST_IMAGE;
+            }}
+          />
+          <button 
+            className="play-button" 
+            onClick={(e) => {
+              e.stopPropagation();
+              handlePlaylistClick('Liked Songs');
+            }}
+            aria-label={`Play ${'Liked Songs'}`}
+          >
+            <Play size={24} fill="currentColor" />
+          </button>
+        </div>
+        <div className="card-info">
+          <h3>{'Liked Songs'}</h3>
+          <p>{likedSongs} {likedSongs === 1 ? 'song' : 'songs'}</p>
+        </div>
+      </div>
       {filteredAndSortedPlaylists.map(playlist => (
-        <div 
+        playlist.name !== "Liked Songs" && (<div 
           className="playlist-card"
           key={playlist.id}
           onClick={() => handlePlaylistClick(playlist.name)}
@@ -221,10 +236,13 @@ const LibraryPage = () => {
             <h3>{playlist.name}</h3>
             <p>{playlist.songCount} {playlist.songCount === 1 ? 'song' : 'songs'}</p>
           </div>
-          <button onClick={handelupdateplaylist(playlist.name)}>
+          <button 
+            onClick={handleUpdatePlaylist(playlist.name)}
+            aria-label={`More options for ${playlist.name}`}
+            >
             <MoreHorizontal size={20}/>
           </button>
-        </div>
+        </div>)
       ))}
     </div>
   );
@@ -232,48 +250,80 @@ const LibraryPage = () => {
   const ListView = () => (
     <div className="playlist-list-container">
       <div className="playlist-list-header">
-        <div className="header-index">#</div>
+        <div className="header-index"></div>
         <div className="header-title">TITLE</div>
         <div className="header-count">
           <Music size={16} />
         </div>
-        <div className="header-updated">
-          <Clock size={16} />
+      </div>
+      <div 
+        className="playlist-list-item"
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === 'Enter' && handlePlaylistClick("Liked Songs")}
+      >
+        <div className="item-index"
+          onClick={() => handlePlaylistClick("Liked Songs")}></div>
+        <div className="item-info"
+          onClick={() => handlePlaylistClick("Liked Songs")}>
+          <img
+            src={likeimg}
+            alt={`${"Liked Songs"} cover`}
+            loading="lazy"
+            onError={(e) => {
+              e.target.src = DEFAULT_PLAYLIST_IMAGE;
+            }}
+          />
+          <span>{"Liked Songs"}</span>
+        </div>
+        <div className="item-count"
+          onClick={() => handlePlaylistClick("Liked Songs")}>{likedSongs}</div>
+        <div className="item-updated"
+          onClick={() => handlePlaylistClick("Liked Songs")}>
         </div>
       </div>
       
-      {filteredAndSortedPlaylists.map((playlist, index) => (
-        <div 
-          className="playlist-list-item"
-          key={playlist.id}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && handlePlaylistClick(playlist.name)}
-        >
-          <div className="item-index"
-            onClick={() => handlePlaylistClick(playlist.name)}>{index + 1}</div>
-          <div className="item-info"
-            onClick={() => handlePlaylistClick(playlist.name)}>
-            <img
-              src={playlist.image}
-              alt={`${playlist.name} cover`}
-              loading="lazy"
-              onError={(e) => {
-                e.target.src = DEFAULT_PLAYLIST_IMAGE;
-              }}
-            />
-            <span>{playlist.name}</span>
+      {filteredAndSortedPlaylists.map((playlist) => (
+        playlist.name !== "Liked Songs" && (
+          <div 
+            className="playlist-list-item"
+            key={playlist.id}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === 'Enter' && handlePlaylistClick(playlist.name)}
+          >
+            <div 
+              className="item-index"
+              onClick={() => handlePlaylistClick(playlist.name)}
+            ></div>
+            <div 
+              className="item-info"
+              onClick={() => handlePlaylistClick(playlist.name)}
+            >
+              <img
+                src={playlist.image}
+                alt={`${playlist.name} cover`}
+                loading="lazy"
+                onError={(e) => {
+                  e.target.src = DEFAULT_PLAYLIST_IMAGE;
+                }}
+              />
+              <span>{playlist.name}</span>
+            </div>
+            <div 
+              className="item-count"
+              onClick={() => handlePlaylistClick(playlist.name)}
+            >
+              {playlist.songCount}
+            </div>
+            <button 
+              onClick={handleUpdatePlaylist(playlist.name)}
+              aria-label={`Edit ${playlist.name}`}
+            >
+              <MoreHorizontal size={20} />
+            </button>
           </div>
-          <div className="item-count"
-            onClick={() => handlePlaylistClick(playlist.name)}>{playlist.songCount}</div>
-          <div className="item-updated"
-            onClick={() => handlePlaylistClick(playlist.name)}>
-            {formatDate(playlist.updatedAt)}
-          </div>
-          <button onClick={handelupdateplaylist(playlist.name)}>
-            <MoreHorizontal size={20}/>
-          </button>
-        </div>
+        )
       ))}
     </div>
   );

@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef, useContext, useCallback } from 'react';
 import {
-  Play, Pause, SkipBack, SkipForward,
-  Volume2, VolumeX,
-  Shuffle, Repeat, Repeat1
+  Play, Pause, SkipBack, SkipForward, 
+  Volume2, VolumeX, Shuffle, Repeat, Repeat1, Heart
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import '../style/NowPlayingBar.css';
@@ -25,23 +24,31 @@ const NowPlayingBar = () => {
 
   // State management
   const [isMuted, setIsMuted] = useState(false);
-  const [playerReady, setPlayerReady] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [apiLoaded, setApiLoaded] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
   
   // Refs
   const playerRef = useRef(null);
   const intervalRef = useRef(null);
   const playerContainerRef = useRef(null);
-  const isInitializingRef = useRef(false);
+  const apiLoadedRef = useRef(false);
   const currentTrackIdRef = useRef(null);
+  const isPlayerReadyRef = useRef(false);
+
+  useEffect(() => {
+  if ('serviceWorker' in navigator && 'SyncManager' in window) {
+    navigator.serviceWorker.ready.then(registration => {
+      registration.sync.register('playback-sync');
+    });
+  }
+}, [isPlaying]);
 
   // Format time display (MM:SS)
   const formatTime = useCallback((timeInSeconds) => {
-    if (isNaN(timeInSeconds) || timeInSeconds < 0) return '0:00';
+    if (isNaN(timeInSeconds)) return '0:00';
     const minutes = Math.floor(timeInSeconds / 60);
     const seconds = Math.floor(timeInSeconds % 60).toString().padStart(2, '0');
     return `${minutes}:${seconds}`;
@@ -67,11 +74,17 @@ const NowPlayingBar = () => {
     stopTimeTracking();
     if (playerRef.current?.destroy) playerRef.current.destroy();
     playerRef.current = null;
-    setPlayerReady(false);
+    isPlayerReadyRef.current = false;
     setCurrentTime(0);
     setDuration(0);
-    isInitializingRef.current = false;
   }, [stopTimeTracking]);
+
+  const safePlayerCall = (method, ...args) => {
+    if (playerRef.current && isPlayerReadyRef.current && typeof playerRef.current[method] === 'function') {
+      return playerRef.current[method](...args);
+    }
+    return null;
+  };
 
   // Event handlers
   const onPlayerError = useCallback((event) => {
@@ -84,29 +97,42 @@ const NowPlayingBar = () => {
     };
     setError(errorMessages[event.data] || "Playback error");
     setIsLoading(false);
-    isInitializingRef.current = false;
   }, []);
 
   const onPlayerReady = useCallback((event) => {
-    setPlayerReady(true);
+    isPlayerReadyRef.current = true;
     setIsLoading(false);
-    isInitializingRef.current = false;
     
     const videoDuration = event.target.getDuration();
     if (videoDuration > 0) setDuration(videoDuration);
     
-    isMuted ? event.target.mute() : event.target.unMute();
-    if (isPlaying) event.target.playVideo();
-  }, [isMuted, isPlaying]);
+    if (isMuted) {
+      safePlayerCall('mute');
+    } else {
+      safePlayerCall('unMute');
+    }
+    
+    if (isPlaying) {
+      const playPromise = safePlayerCall('playVideo');
+      if (playPromise && playPromise.catch) {
+        playPromise.catch(err => {
+          console.error('Playback failed:', err);
+          setIsPlaying(false);
+        });
+      }
+    }
+  }, [isMuted, isPlaying, setIsPlaying]);
 
   const handleTrackEnded = useCallback(() => {
     if (repeatMode === 'one') {
-      playerRef.current?.seekTo(0)?.playVideo();
-      setIsPlaying(true);
+      safePlayerCall('seekTo', 0);
+      safePlayerCall('playVideo');
     } else {
-      handleTrackEnd?.() || playNextTrack?.();
+      setTimeout(() => {
+        handleTrackEnd?.() || playNextTrack?.();
+      }, 500);
     }
-  }, [repeatMode, handleTrackEnd, playNextTrack, setIsPlaying]);
+  }, [repeatMode, handleTrackEnd, playNextTrack]);
 
   const onPlayerStateChange = useCallback((event) => {
     switch (event.data) {
@@ -126,25 +152,58 @@ const NowPlayingBar = () => {
         handleTrackEnded();
         break;
       case window.YT.PlayerState.BUFFERING:
-        setIsLoading(true);
-        break;
       case window.YT.PlayerState.CUED:
-        setIsLoading(false);
+        setIsLoading(true);
         break;
       default:
         break;
     }
   }, [setIsPlaying, startTimeTracking, stopTimeTracking, handleTrackEnded]);
 
+  // Setup Media Session API
+  const setupMediaSession = useCallback(() => {
+    if (!('mediaSession' in navigator) || !currentTrack) return;
+
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: currentTrack.title || 'Unknown Track',
+      artist: currentTrack.artist || 'Unknown Artist',
+      album: '',
+      artwork: [
+        { src: currentTrack.image || '/placeholder-music.png', sizes: '96x96', type: 'image/png' },
+      ]
+    });
+
+    navigator.mediaSession.setActionHandler('play', togglePlayPause);
+    navigator.mediaSession.setActionHandler('pause', togglePlayPause);
+    navigator.mediaSession.setActionHandler('previoustrack', playPreviousTrack);
+    navigator.mediaSession.setActionHandler('nexttrack', playNextTrack);
+    navigator.mediaSession.setActionHandler('seekbackward', () => {
+      safePlayerCall('seekTo', Math.max(0, currentTime - 10), true);
+    });
+    navigator.mediaSession.setActionHandler('seekforward', () => {
+      safePlayerCall('seekTo', Math.min(duration, currentTime + 10), true);
+    });
+
+    return () => {
+      navigator.mediaSession.metadata = null;
+      ['play', 'pause', 'previoustrack', 'nexttrack', 'seekbackward', 'seekforward'].forEach(
+        action => navigator.mediaSession.setActionHandler(action, null)
+      );
+    };
+  }, [currentTrack, currentTime, duration, playNextTrack, playPreviousTrack, togglePlayPause]);
+
   // Player initialization
   const setupPlayer = useCallback((videoId) => {
-    if (isInitializingRef.current || !playerContainerRef.current) return;
+    if (!playerContainerRef.current || !apiLoadedRef.current) return;
     
-    isInitializingRef.current = true;
     setIsLoading(true);
     setError(null);
     
     try {
+      if (playerRef.current) {
+        destroyPlayer();
+      }
+
       playerRef.current = new window.YT.Player(playerContainerRef.current, {
         height: '0',
         width: '0',
@@ -158,6 +217,7 @@ const NowPlayingBar = () => {
           fs: 0,
           origin: window.location.origin,
           enablejsapi: 1,
+          playsinline: 1,
         },
         events: {
           onReady: onPlayerReady,
@@ -169,72 +229,109 @@ const NowPlayingBar = () => {
       console.error('Player setup error:', err);
       setError("Player initialization failed");
       setIsLoading(false);
-      isInitializingRef.current = false;
     }
-  }, [isPlaying, onPlayerError, onPlayerReady, onPlayerStateChange]);
+  }, [destroyPlayer, isPlaying, onPlayerError, onPlayerReady, onPlayerStateChange]);
 
   // YouTube API loader
   useEffect(() => {
     if (window.YT?.Player) {
-      setApiLoaded(true);
+      apiLoadedRef.current = true;
       return;
     }
 
     const existingScript = document.querySelector('script[src="https://www.youtube.com/iframe_api"]');
-    if (!existingScript) {
-      const tag = document.createElement('script');
-      tag.src = 'https://www.youtube.com/iframe_api';
-      tag.async = true;
-      document.head.appendChild(tag);
-
-      window.onYouTubeIframeAPIReady = () => setApiLoaded(true);
+    if (existingScript) {
+      apiLoadedRef.current = true;
+      return;
     }
+
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    tag.async = true;
+    
+    window.onYouTubeIframeAPIReady = () => {
+      apiLoadedRef.current = true;
+      if (currentTrack?.id) {
+        setupPlayer(currentTrack.id);
+      }
+    };
+
+    document.head.appendChild(tag);
 
     return () => {
       destroyPlayer();
       clearInterval(intervalRef.current);
     };
-  }, [destroyPlayer]);
+  }, [currentTrack?.id, destroyPlayer, setupPlayer]);
 
   // Track change handler
   useEffect(() => {
-    if (!apiLoaded) return;
-
-    if (currentTrack?.id) {
-      if (currentTrackIdRef.current !== currentTrack.id) {
-        currentTrackIdRef.current = currentTrack.id;
-        destroyPlayer();
-        setupPlayer(currentTrack.id);
-      }
-    } else {
-      currentTrackIdRef.current = null;
+    if (!currentTrack?.id) {
       destroyPlayer();
+      currentTrackIdRef.current = null;
+      return;
     }
-  }, [currentTrack?.id, apiLoaded, destroyPlayer, setupPlayer]);
+
+    if (currentTrackIdRef.current !== currentTrack.id && apiLoadedRef.current) {
+      currentTrackIdRef.current = currentTrack.id;
+      setupPlayer(currentTrack.id);
+    }
+  }, [currentTrack?.id, destroyPlayer, setupPlayer]);
 
   // Play/pause sync
   useEffect(() => {
-    if (!playerReady || !playerRef.current || isInitializingRef.current) return;
-    isPlaying ? playerRef.current.playVideo() : playerRef.current.pauseVideo();
-  }, [isPlaying, playerReady]);
+    if (!isPlayerReadyRef.current) return;
+    
+    if (isPlaying) {
+      const playPromise = safePlayerCall('playVideo');
+      if (playPromise && playPromise.catch) {
+        playPromise.catch(err => {
+          console.error('Playback failed:', err);
+          setIsPlaying(false);
+        });
+      }
+    } else {
+      safePlayerCall('pauseVideo');
+    }
+  }, [isPlaying, setIsPlaying]);
+
+  // Media session setup
+  useEffect(() => {
+    if (!currentTrack) return;
+    
+    const cleanup = setupMediaSession();
+    return () => {
+      cleanup?.();
+    };
+  }, [currentTrack, setupMediaSession]);
+
+  // Update playback state for media session
+  useEffect(() => {
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+    }
+  }, [isPlaying]);
 
   // UI handlers
   const handleSeek = useCallback((e) => {
     const newTime = parseFloat(e.target.value);
-    if (playerReady && playerRef.current && !isNaN(newTime)) {
-      playerRef.current.seekTo(newTime, true);
+    if (!isNaN(newTime)) {
+      safePlayerCall('seekTo', newTime, true);
       setCurrentTime(newTime);
     }
-  }, [playerReady]);
+  }, []);
 
   const toggleMute = useCallback(() => {
-    if (!playerReady || !playerRef.current) return;
     setIsMuted(prev => {
       const newMuted = !prev;
-      newMuted ? playerRef.current.mute() : playerRef.current.unMute();
+      if (newMuted) {
+        safePlayerCall('mute');
+      } else {
+        safePlayerCall('unMute');
+      }
       return newMuted;
     });
-  }, [playerReady]);
+  }, []);
 
   const toggleShuffle = useCallback(() => {
     setShuffleMode(prev => !prev);
@@ -247,6 +344,11 @@ const NowPlayingBar = () => {
       return 'off';
     });
   }, [setRepeatMode]);
+
+  const toggleLike = useCallback(() => {
+    setIsLiked(prev => !prev);
+    
+  }, []);
 
   if (!currentTrack) return null;
 
@@ -280,6 +382,13 @@ const NowPlayingBar = () => {
       <div className="nowPlayingBar__playerControls">
         <div className="nowPlayingBar__transportControls">
           <button 
+            onClick={toggleLike}
+            className={`nowPlayingBar__controlButton ${isLiked ? 'nowPlayingBar__controlButton--active' : ''}`}
+            aria-label={isLiked ? 'Unlike' : 'Like'}
+          >
+            <Heart size={20} fill={isLiked ? "currentColor" : "none"} />
+          </button>
+          <button 
             onClick={toggleShuffle} 
             className={`nowPlayingBar__controlButton ${shuffleMode ? 'nowPlayingBar__controlButton--active' : ''}`}
             disabled={isLoading}
@@ -297,7 +406,7 @@ const NowPlayingBar = () => {
           </button>
           <button 
             onClick={togglePlayPause} 
-            disabled={isLoading || !playerReady} 
+            disabled={isLoading} 
             className="nowPlayingBar__playButton"
             aria-label={isPlaying ? 'Pause' : 'Play'}
           >
@@ -330,7 +439,7 @@ const NowPlayingBar = () => {
             max={duration || 1}
             value={currentTime}
             onChange={handleSeek}
-            disabled={!playerReady || isLoading}
+            disabled={isLoading}
             className="nowPlayingBar__progressBar"
             aria-label="Track progress"
           />
@@ -344,7 +453,6 @@ const NowPlayingBar = () => {
         <button 
           onClick={toggleMute} 
           className="nowPlayingBar__volumeButton"
-          disabled={!playerReady}
           aria-label={isMuted ? 'Unmute' : 'Mute'}
         >
           {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}

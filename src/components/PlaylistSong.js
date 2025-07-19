@@ -29,8 +29,8 @@ const PlaylistSong = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // const API_BASE_URL = 'http://localhost:5000';
-  const API_BASE_URL = 'https://yashmusic-backend.onrender.com';
+  const API_BASE_URL = 'http://localhost:5000';
+  // const API_BASE_URL = 'https://yashmusic-backend.onrender.com';
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -232,7 +232,7 @@ const PlaylistSong = () => {
             <span className="playlist-type">Playlist</span>
             <h1>{playlistInfo?.name || 'Untitled Playlist'}</h1>
             <div className="playlist-meta">
-              <span>{playlistInfo?.usermail || 'Unknown user'}</span> •{' '}
+              <span>{user?.displayName || 'Unknown user'}</span> •{' '}
               <span>{songs.length} {songs.length === 1 ? 'song' : 'songs'}</span> •{' '}
               <span>{getTotalDuration()}</span>
             </div>
