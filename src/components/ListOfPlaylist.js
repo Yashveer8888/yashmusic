@@ -7,7 +7,7 @@ import '../style/ListofPlaylist.css';
 
 const ListOfPlaylist = () => {
   // Context and state management
-  const { user, setPlaylistname, addSongToPlaylist, song } = useContext(AuthContext);
+  const { user, addSongToPlaylist, song } = useContext(AuthContext);
   const [myPlaylists, setMyPlaylists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -97,7 +97,6 @@ const ListOfPlaylist = () => {
 
   const handleAddSong = (playlistName) => {
     if (!user || !playlistName || !song) return;
-    setPlaylistname(playlistName);
     addSongToPlaylist(user?.email, playlistName, song);
     navigate("/library");
   };
